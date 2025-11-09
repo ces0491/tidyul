@@ -1,0 +1,38 @@
+Package: tidyul
+Type: Package
+Title: Tidy Unsupervised Learning Tools
+Version: 0.1.0
+Authors@R: person("Your", "Name", email = "your.email@example.com", role = c("aut", "cre"))
+Description: A comprehensive toolkit for unsupervised learning analysis built on tidyverse principles.
+    Provides simplified interfaces for principal component analysis (PCA), multidimensional scaling (MDS),
+    hierarchical clustering, k-means, k-medoids (PAM/CLARA), DBSCAN, market basket analysis, and more.
+    All functions follow tidy data principles with extensive documentation and examples.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+    dplyr (>= 1.0.0),
+    ggplot2 (>= 3.3.0),
+    tibble (>= 3.0.0),
+    tidyr (>= 1.0.0),
+    purrr (>= 0.3.0),
+    rlang (>= 0.4.0),
+    cluster (>= 2.1.0),
+    dbscan (>= 1.1.0),
+    arules (>= 1.6.0),
+    arulesViz (>= 1.5.0),
+    MASS (>= 7.3.0),
+    smacof (>= 2.1.0),
+    factoextra (>= 1.0.0),
+    stats,
+    utils
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    mclust
+VignetteBuilder: knitr
+URL: https://github.com/yourusername/tidyul
+BugReports: https://github.com/yourusername/tidyul/issues
