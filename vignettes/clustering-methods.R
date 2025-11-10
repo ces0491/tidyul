@@ -225,18 +225,25 @@ plot_knn_dist(knn_dist) +
   labs(title = "k-NN Distance Plot (k=5)",
        subtitle = "Look for 'knee' to determine eps")
 
-# Get suggested eps
-suggested_eps <- suggest_eps(cluster_data, k = 5)
+# Get suggested eps from knn_dist object
+suggested_eps <- suggest_eps(knn_dist)
 suggested_eps
 
 
 ## ----dbscan-params------------------------------------------------------------
-# Explore different parameter combinations
-param_results <- explore_dbscan_params(
-  cluster_data,
-  eps_range = c(0.3, 0.8),
-  minPts_range = c(3, 10)
-)
+# Explore different parameter combinations manually
+eps_vals <- seq(0.3, 0.8, by = 0.1)
+minPts_vals <- seq(3, 10, by = 1)
+
+param_results <- expand.grid(eps = eps_vals, minPts = minPts_vals) %>%
+  rowwise() %>%
+  mutate(
+    n_clusters = {
+      result <- tidy_dbscan(cluster_data, eps = eps, minPts = minPts)
+      max(result$clusters$cluster)
+    }
+  ) %>%
+  ungroup()
 
 param_results %>%
   ggplot(aes(x = eps, y = minPts, fill = n_clusters)) +
@@ -254,38 +261,67 @@ km3 <- tidy_kmeans(iris_data, k = 3, nstart = 25)
 pam3 <- tidy_pam(iris_data, k = 3)
 hc3 <- tidy_hclust(iris_data)
 
-# Calculate validation metrics
-km_metrics <- calc_validation_metrics(km3, iris_data)
-pam_metrics <- calc_validation_metrics(pam3, iris_data)
+# Calculate distance matrix for silhouette analysis
+iris_dist <- dist(iris_data)
 
-# Compare silhouette widths
-km_metrics$silhouette$avg_width
-pam_metrics$silhouette$avg_width
+# Get cluster assignments (convert to numeric)
+km_clusters <- as.numeric(as.character(augment_kmeans(km3, iris_data)$cluster))
+pam_clusters <- as.numeric(as.character(augment_pam(pam3, iris_data)$cluster))
+
+# Calculate silhouette for validation
+km_sil <- tidy_silhouette(km_clusters, iris_dist)
+pam_sil <- tidy_silhouette(pam_clusters, iris_dist)
+
+# Compare average silhouette widths
+km_sil$avg_width
+pam_sil$avg_width
 
 
 ## ----compare-methods----------------------------------------------------------
-# Compare multiple clusterings
-comparison <- compare_clusterings(
-  list(
-    "K-Means" = km3,
-    "PAM" = pam3
-  ),
-  iris_data
+# Compare silhouette widths
+comparison_df <- data.frame(
+  Method = c("K-Means", "PAM"),
+  Avg_Silhouette = c(km_sil$avg_width, pam_sil$avg_width),
+  N_Clusters = c(3, 3)
 )
 
-comparison
+comparison_df
 
 # Visualize comparison
-plot_cluster_comparison(comparison)
+comparison_df %>%
+  ggplot(aes(x = Method, y = Avg_Silhouette, fill = Method)) +
+  geom_col() +
+  geom_text(aes(label = round(Avg_Silhouette, 3)), vjust = -0.5) +
+  labs(title = "Clustering Method Comparison",
+       y = "Average Silhouette Width") +
+  theme_minimal() +
+  theme(legend.position = "none")
 
 
 ## ----cluster-sizes------------------------------------------------------------
 # Compare cluster sizes
-plot_cluster_sizes(km3) +
-  labs(title = "K-Means Cluster Sizes")
+# Create manual cluster size plots
+km_size_df <- data.frame(cluster = km_clusters) %>%
+  count(cluster)
 
-plot_cluster_sizes(pam3) +
-  labs(title = "PAM Cluster Sizes")
+km_size_df %>%
+  ggplot(aes(x = factor(cluster), y = n, fill = factor(cluster))) +
+  geom_col() +
+  geom_text(aes(label = n), vjust = -0.5) +
+  labs(title = "K-Means Cluster Sizes", x = "Cluster", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+pam_size_df <- data.frame(cluster = pam_clusters) %>%
+  count(cluster)
+
+pam_size_df %>%
+  ggplot(aes(x = factor(cluster), y = n, fill = factor(cluster))) +
+  geom_col() +
+  geom_text(aes(label = n), vjust = -0.5) +
+  labs(title = "PAM Cluster Sizes", x = "Cluster", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
 
 
 ## ----workflow-----------------------------------------------------------------
@@ -303,7 +339,9 @@ quick_result$recommendation
 final_clustering <- tidy_kmeans(iris_std, k = 3, nstart = 50)
 
 # 5. Validate
-sil_result <- tidy_silhouette(final_clustering, iris_std)
+iris_std_dist <- dist(iris_std)
+final_clusters <- as.numeric(as.character(augment_kmeans(final_clustering, iris_std)$cluster))
+sil_result <- tidy_silhouette(final_clusters, iris_std_dist)
 plot_silhouette(sil_result)
 
 # 6. Interpret and export

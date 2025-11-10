@@ -175,12 +175,7 @@ products <- c(
 )
 
 # Generate transactions (laptops often purchased with accessories)
-ecommerce_transactions <- data.frame(
-  transaction_id = rep(1:n_transactions, each = sample(1:5, n_transactions, replace = TRUE)),
-  item = NA
-)
-
-# Simulate realistic shopping patterns
+transaction_list <- list()
 set.seed(123)
 for (i in 1:n_transactions) {
   basket_size <- sample(2:5, 1)
@@ -188,16 +183,19 @@ for (i in 1:n_transactions) {
   # If laptop is bought, more likely to buy accessories
   if (runif(1) < 0.3) {
     items <- c("laptop", sample(c("mouse", "keyboard", "laptop_bag", "hdmi_cable"),
-                                 basket_size - 1, replace = FALSE))
+                                 min(basket_size - 1, 4), replace = FALSE))
   } else {
     items <- sample(products, basket_size, replace = FALSE)
   }
 
-  ecommerce_transactions[ecommerce_transactions$transaction_id == i, "item"] <- items
+  transaction_list[[i]] <- items
 }
 
-# Remove NA rows
-ecommerce_transactions <- ecommerce_transactions %>% filter(!is.na(item))
+# Convert to data frame
+ecommerce_transactions <- data.frame(
+  transaction_id = rep(1:n_transactions, times = sapply(transaction_list, length)),
+  item = unlist(transaction_list)
+)
 
 # Convert to transactions format
 ecom_list <- split(ecommerce_transactions$item, ecommerce_transactions$transaction_id)
@@ -225,14 +223,18 @@ laptop_recommendations <- recommend_products(
   top_n = 5
 )
 
-laptop_recommendations
+if (nrow(laptop_recommendations) > 0) {
+  laptop_recommendations
 
-# Expected uplift from recommendations
-laptop_recommendations %>%
-  mutate(
-    expected_uplift = paste0("+", round((lift - 1) * 100, 1), "%")
-  ) %>%
-  select(recommendation, confidence, lift, expected_uplift)
+  # Expected uplift from recommendations
+  laptop_recommendations %>%
+    mutate(
+      expected_uplift = paste0("+", round((lift - 1) * 100, 1), "%")
+    ) %>%
+    select(rhs, confidence, lift, expected_uplift)
+} else {
+  message("No recommendations found for laptop purchases")
+}
 
 
 ## ----tune-support-------------------------------------------------------------

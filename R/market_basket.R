@@ -31,6 +31,12 @@
 tidy_apriori <- function(transactions, support = 0.01, confidence = 0.5,
                          minlen = 2, maxlen = 10, target = "rules") {
 
+  # Check if arules is available
+  if (!requireNamespace("arules", quietly = TRUE)) {
+    stop("Package 'arules' is required for market basket analysis. ",
+         "Please install it with: install.packages('arules')")
+  }
+
   # Set up parameters
   params <- list(
     supp = support,
@@ -69,6 +75,12 @@ tidy_apriori <- function(transactions, support = 0.01, confidence = 0.5,
 #' @return A tibble with one row per rule
 #' @export
 tidy_rules <- function(rules) {
+
+  # Check if arules is available
+  if (!requireNamespace("arules", quietly = TRUE)) {
+    stop("Package 'arules' is required for this function. ",
+         "Please install it with: install.packages('arules')")
+  }
 
   if (length(rules) == 0) {
     return(tibble::tibble())

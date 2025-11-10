@@ -127,7 +127,8 @@ plot_mds(mds_sammon)
 
 ## ----kruskal-mds--------------------------------------------------------------
 # Kruskal's non-metric MDS (needs distance matrix)
-mds_kruskal <- tidy_mds_kruskal(iris_dist, ndim = 2)
+# Use jittered data to avoid duplicate observations
+mds_kruskal <- tidy_mds_kruskal(iris_dist_jitter, ndim = 2)
 
 # View stress
 mds_kruskal$stress
@@ -137,11 +138,14 @@ plot_mds(mds_kruskal)
 
 
 ## ----unified-mds--------------------------------------------------------------
-# Defaults to classical MDS
-mds_result <- tidy_mds(iris_data, k = 2, method = "classical")
+# Use tidy_mds_classical with distance matrix (unified interface)
+# First calculate distance
+iris_dist_euc <- dist(iris_data, method = "euclidean")
+mds_result <- tidy_mds_classical(iris_dist_euc, ndim = 2)
 
 # With different distance metrics
-mds_manhattan <- tidy_mds(iris_data, k = 2, distance = "manhattan")
+iris_dist_man <- dist(iris_data, method = "manhattan")
+mds_manhattan <- tidy_mds_classical(iris_dist_man, ndim = 2)
 
 plot_mds(mds_manhattan)
 
@@ -172,7 +176,7 @@ dist_matrix <- tidy_dist(iris_data, method = "euclidean")
 dist_mat <- dist(iris_data)
 
 # Apply MDS to distance matrix
-mds_from_dist <- tidy_mds(dist_mat, k = 2)
+mds_from_dist <- tidy_mds_classical(dist_mat, ndim = 2)
 
 plot_mds(mds_from_dist)
 

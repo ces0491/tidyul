@@ -232,65 +232,6 @@ tidy_mds_kruskal <- function(dist_mat, ndim = 2, ...) {
 }
 
 
-#' Plot MDS Configuration
-#'
-#' Visualize MDS results
-#'
-#' @param mds_obj A tidy_mds object
-#' @param color_by Optional variable to color points by
-#' @param label_points Logical; add point labels? (default: TRUE)
-#' @param dim_x Which dimension for x-axis (default: 1)
-#' @param dim_y Which dimension for y-axis (default: 2)
-#'
-#' @return A ggplot object
-#' @export
-plot_mds <- function(mds_obj, color_by = NULL, label_points = TRUE,
-                     dim_x = 1, dim_y = 2) {
-
-  if (!inherits(mds_obj, "tidy_mds")) {
-    stop("mds_obj must be a tidy_mds object")
-  }
-
-  config <- mds_obj$config
-  dim_x_name <- paste0("Dim", dim_x)
-  dim_y_name <- paste0("Dim", dim_y)
-
-  # Base plot
-  p <- ggplot2::ggplot(config, ggplot2::aes(x = .data[[dim_x_name]], y = .data[[dim_y_name]]))
-
-  # Add points
-  if (!is.null(color_by)) {
-    p <- p + ggplot2::geom_point(ggplot2::aes(color = .data[[color_by]]), size = 3, alpha = 0.7)
-  } else {
-    p <- p + ggplot2::geom_point(size = 3, alpha = 0.7, color = "steelblue")
-  }
-
-  # Add labels
-  if (label_points && ".id" %in% names(config)) {
-    p <- p + ggplot2::geom_text(ggplot2::aes(label = .id), vjust = -0.7, size = 3)
-  }
-
-  # Add title with stress if available
-  title <- mds_obj$method
-  if (!is.na(mds_obj$stress)) {
-    title <- paste0(title, sprintf(" (Stress = %.4f)", mds_obj$stress))
-  } else if (!is.null(mds_obj$gof)) {
-    title <- paste0(title, sprintf(" (GOF = %.2f%%)", mds_obj$gof * 100))
-  }
-
-  p <- p +
-    ggplot2::labs(
-      title = title,
-      x = paste("Dimension", dim_x),
-      y = paste("Dimension", dim_y)
-    ) +
-    ggplot2::theme_minimal() +
-    ggplot2::coord_equal()
-
-  p
-}
-
-
 #' Print Method for tidy_mds
 #'
 #' @param x A tidy_mds object

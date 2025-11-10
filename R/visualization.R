@@ -298,3 +298,239 @@ plot_distance_heatmap <- function(dist_mat, cluster_order = NULL, title = "Dista
       axis.text.y = ggplot2::element_text(size = 6)
     )
 }
+
+
+#' Plot MDS Results
+#'
+#' Visualize MDS dimensions with optional cluster coloring
+#'
+#' @param mds_obj A tidy_mds object or matrix of MDS coordinates
+#' @param data Original data frame (optional, for adding cluster info)
+#' @param cluster_col Name of cluster column if present in data
+#' @param dim1 First dimension to plot (default: 1)
+#' @param dim2 Second dimension to plot (default: 2)
+#' @param title Plot title
+#' @param show_stress Show stress value in subtitle? (default: TRUE)
+#'
+#' @return A ggplot object
+#' @export
+plot_mds <- function(mds_obj, data = NULL, cluster_col = NULL, dim1 = 1, dim2 = 2,
+                     title = "MDS Plot", show_stress = TRUE) {
+
+  # Extract coordinates
+  if (inherits(mds_obj, "tidy_mds")) {
+    coords <- mds_obj$config
+    stress <- mds_obj$stress
+  } else if (is.matrix(mds_obj) || is.data.frame(mds_obj)) {
+    coords <- as.data.frame(mds_obj)
+    stress <- NULL
+  } else {
+    stop("mds_obj must be a tidy_mds object, matrix, or data frame")
+  }
+
+  # Create plot data - handle different coordinate formats
+  if (".id" %in% names(coords)) {
+    # Has .id column, select dimension columns by name
+    dim_cols <- grep("^Dim", names(coords), value = TRUE)
+    plot_data <- tibble::tibble(
+      x = coords[[dim_cols[dim1]]],
+      y = coords[[dim_cols[dim2]]]
+    )
+  } else {
+    # No .id column, select by position
+    plot_data <- tibble::tibble(
+      x = coords[[dim1]],
+      y = coords[[dim2]]
+    )
+  }
+
+  # Add cluster info if provided
+  if (!is.null(data) && !is.null(cluster_col) && cluster_col %in% names(data)) {
+    plot_data$cluster <- as.factor(data[[cluster_col]])
+  }
+
+  # Create subtitle with stress
+  subtitle <- NULL
+  if (show_stress && !is.null(stress)) {
+    subtitle <- sprintf("Stress: %.4f", stress)
+  }
+
+  # Create plot
+  if ("cluster" %in% names(plot_data)) {
+    p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$x, y = .data$y, color = .data$cluster)) +
+      ggplot2::geom_point(size = 2.5, alpha = 0.7) +
+      ggplot2::labs(color = "Cluster")
+  } else {
+    p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$x, y = .data$y)) +
+      ggplot2::geom_point(size = 2.5, alpha = 0.7, color = "steelblue")
+  }
+
+  p <- p +
+    ggplot2::labs(
+      title = title,
+      subtitle = subtitle,
+      x = sprintf("MDS Dimension %d", dim1),
+      y = sprintf("MDS Dimension %d", dim2)
+    ) +
+    ggplot2::theme_minimal()
+
+  p
+}
+
+
+#' Plot DBSCAN Results
+#'
+#' Convenient wrapper to plot DBSCAN clustering results
+#'
+#' @param dbscan_obj A tidy_dbscan object
+#' @param data Original data frame
+#' @param x_col X-axis variable (if NULL, uses first numeric column)
+#' @param y_col Y-axis variable (if NULL, uses second numeric column)
+#' @param title Plot title
+#' @param show_stats Show statistics in subtitle? (default: TRUE)
+#'
+#' @return A ggplot object
+#' @export
+plot_dbscan <- function(dbscan_obj, data, x_col = NULL, y_col = NULL,
+                        title = "DBSCAN Clustering", show_stats = TRUE) {
+
+  if (!inherits(dbscan_obj, "tidy_dbscan")) {
+    stop("dbscan_obj must be a tidy_dbscan object")
+  }
+
+  # Augment data
+  data_clustered <- augment_dbscan(dbscan_obj, data)
+
+  # Create subtitle with stats
+  subtitle <- NULL
+  if (show_stats) {
+    subtitle <- sprintf(
+      "eps = %.3f, minPts = %d | Clusters: %d, Noise: %d (%.1f%%)",
+      dbscan_obj$eps,
+      dbscan_obj$minPts,
+      dbscan_obj$n_clusters,
+      dbscan_obj$n_noise,
+      (dbscan_obj$n_noise / nrow(data)) * 100
+    )
+  }
+
+  # Plot
+  p <- plot_clusters(data_clustered, cluster_col = "cluster",
+                     x_col = x_col, y_col = y_col,
+                     title = title, color_noise_black = TRUE)
+
+  if (!is.null(subtitle)) {
+    p <- p + ggplot2::labs(subtitle = subtitle)
+  }
+
+  p
+}
+
+
+#' Plot K-Means Results
+#'
+#' Convenient wrapper to plot k-means clustering results
+#'
+#' @param kmeans_obj A tidy_kmeans object
+#' @param data Original data frame
+#' @param x_col X-axis variable (if NULL, uses first numeric column)
+#' @param y_col Y-axis variable (if NULL, uses second numeric column)
+#' @param show_centers Show cluster centers? (default: TRUE)
+#' @param title Plot title
+#' @param show_stats Show statistics in subtitle? (default: TRUE)
+#'
+#' @return A ggplot object
+#' @export
+plot_kmeans <- function(kmeans_obj, data, x_col = NULL, y_col = NULL,
+                        show_centers = TRUE, title = "K-Means Clustering",
+                        show_stats = TRUE) {
+
+  if (!inherits(kmeans_obj, "tidy_kmeans")) {
+    stop("kmeans_obj must be a tidy_kmeans object")
+  }
+
+  # Augment data
+  data_clustered <- augment_kmeans(kmeans_obj, data)
+
+  # Create subtitle with stats
+  subtitle <- NULL
+  if (show_stats) {
+    subtitle <- sprintf(
+      "k = %d | Total WSS: %.2f | Between SS: %.2f",
+      kmeans_obj$metrics$k,
+      kmeans_obj$metrics$tot_withinss,
+      kmeans_obj$metrics$betweenss
+    )
+  }
+
+  # Prepare centers if showing
+  centers_df <- NULL
+  if (show_centers) {
+    centers_df <- kmeans_obj$centers
+  }
+
+  # Plot
+  p <- plot_clusters(data_clustered, cluster_col = "cluster",
+                     x_col = x_col, y_col = y_col,
+                     centers = centers_df,
+                     title = title, color_noise_black = FALSE)
+
+  if (!is.null(subtitle)) {
+    p <- p + ggplot2::labs(subtitle = subtitle)
+  }
+
+  p
+}
+
+
+#' Plot Hierarchical Clustering Results
+#'
+#' Complete visualization with dendrogram and cluster plot
+#'
+#' @param hclust_obj A tidy_hclust object
+#' @param data Original data frame
+#' @param k Number of clusters to cut tree
+#' @param x_col X-axis variable for cluster plot (if NULL, uses first numeric column)
+#' @param y_col Y-axis variable for cluster plot (if NULL, uses second numeric column)
+#' @param show_dendrogram Show dendrogram? (default: TRUE)
+#' @param title Plot title
+#'
+#' @return A ggplot object or list of plots if show_dendrogram = TRUE
+#' @export
+plot_hclust_results <- function(hclust_obj, data, k, x_col = NULL, y_col = NULL,
+                                 show_dendrogram = TRUE, title = "Hierarchical Clustering") {
+
+  if (!inherits(hclust_obj, "tidy_hclust")) {
+    stop("hclust_obj must be a tidy_hclust object")
+  }
+
+  # Cut tree to get clusters
+  clusters <- tidy_cutree(hclust_obj, k = k)
+
+  # Add to data
+  data_clustered <- data %>%
+    dplyr::mutate(cluster = as.factor(clusters$cluster))
+
+  # Create cluster plot
+  subtitle <- sprintf(
+    "Method: %s | Distance: %s | k = %d",
+    hclust_obj$method,
+    hclust_obj$dist_method,
+    k
+  )
+
+  p_clusters <- plot_clusters(data_clustered, cluster_col = "cluster",
+                               x_col = x_col, y_col = y_col,
+                               title = title, color_noise_black = FALSE) +
+    ggplot2::labs(subtitle = subtitle)
+
+  if (show_dendrogram) {
+    # Show both plots
+    list(
+      dendrogram = function() plot_dendrogram(hclust_obj, k = k, title = paste(title, "- Dendrogram")),
+      clusters = p_clusters
+    )
+  } else {
+    p_clusters
+  }
+}
