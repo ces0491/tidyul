@@ -11,6 +11,7 @@
 
 - 📊 **Principal Component Analysis (PCA)**
 - 📐 **Multidimensional Scaling (MDS)** - Classical, SMACOF, Sammon, Kruskal
+- 🧠 **Advanced Dimensionality Reduction** - ISOMAP, Autoencoders, Self-Organizing Maps
 - 🌳 **Hierarchical Clustering** - All linkage methods
 - 🎯 **K-Means & K-Medoids** - Including PAM and CLARA
 - 🔍 **DBSCAN** - Density-based clustering with parameter tuning
@@ -120,6 +121,34 @@ mds_result <- tidy_mds(eurodist, method = "sammon")
 
 # Visualize
 plot_mds(mds_result, label_points = TRUE)
+```
+
+### Advanced Dimensionality Reduction
+
+```r
+# ISOMAP - preserves geodesic distances
+iris_numeric <- iris %>% select(where(is.numeric))
+isomap_result <- tidy_isomap(iris_numeric, dims = 2, k = 5)
+
+# Visualize
+isomap_result$embedding %>%
+  mutate(species = iris$Species) %>%
+  ggplot(aes(x = Dim1, y = Dim2, color = species)) +
+  geom_point(size = 3)
+
+# Self-Organizing Map (SOM)
+som_result <- tidy_som(iris_numeric, grid_dim = c(5, 5), rlen = 200)
+plot(som_result, type = "counts")
+plot(som_result, type = "quality")
+
+# Autoencoder (requires h2o)
+ae_result <- tidy_autoencoder(
+  iris_numeric,
+  encoding_dim = 2,
+  hidden_layers = c(8, 4),
+  epochs = 50
+)
+plot(ae_result)
 ```
 
 ### Gower Distance for Mixed Data
@@ -237,6 +266,9 @@ Built-in plotting functions using ggplot2:
 | `tidy_mds_smacof()` | SMACOF algorithm (metric/non-metric) |
 | `tidy_mds_sammon()` | Sammon mapping |
 | `tidy_mds_kruskal()` | Kruskal's isoMDS |
+| `tidy_isomap()` | ISOMAP (Isometric Feature Mapping) |
+| `tidy_som()` | Self-Organizing Maps (Kohonen networks) |
+| `tidy_autoencoder()` | Neural network autoencoder for dimensionality reduction |
 
 ### Clustering
 
@@ -309,13 +341,14 @@ Built-in plotting functions using ggplot2:
 ### Vignettes
 
 ```r
-# List all vignettes
+# List all vignettes (requires installation with build_vignettes = TRUE)
 browseVignettes("tidyul")
 
 # Key vignettes
-vignette("pca-tutorial", package = "tidyul")
-vignette("clustering-comparison", package = "tidyul")
-vignette("dbscan-guide", package = "tidyul")
+vignette("introduction", package = "tidyul")
+vignette("pca-and-mds", package = "tidyul")
+vignette("clustering-methods", package = "tidyul")
+vignette("advanced-dimensionality-reduction", package = "tidyul")
 vignette("market-basket-analysis", package = "tidyul")
 ```
 
@@ -354,6 +387,9 @@ This package builds on the work of:
 - `arules` package for association rules
 - `smacof` package for MDS
 - `MASS` package for classical methods
+- `Rdimtools` package for ISOMAP
+- `kohonen` package for Self-Organizing Maps
+- `h2o` package for deep learning autoencoders
 - The `tidyverse` team for design principles
 
 ## Getting Help

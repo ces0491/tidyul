@@ -26,12 +26,11 @@ library(ggplot2)
 
 **tidyul** (Tidy Unsupervised Learning) is a comprehensive toolkit for unsupervised learning analysis built on tidyverse principles. This package provides simplified, consistent interfaces for:
 
-- Principal Component Analysis (PCA)
-- Multidimensional Scaling (MDS)
-- Clustering (K-means, PAM, CLARA, Hierarchical, DBSCAN)
-- Distance/Dissimilarity Measures
-- Cluster Validation
-- Market Basket Analysis
+- **Dimensionality Reduction**: PCA, MDS, ISOMAP, Self-Organizing Maps (SOM), Autoencoders
+- **Clustering**: K-means, PAM, CLARA, Hierarchical, DBSCAN
+- **Distance/Dissimilarity Measures**: Euclidean, Manhattan, Gower, and more
+- **Cluster Validation**: Silhouette analysis, Gap statistic
+- **Market Basket Analysis**: Apriori algorithm for association rules
 
 All functions follow tidy data principles with consistent interfaces and extensive documentation.
 
@@ -214,7 +213,8 @@ tidyul uses consistent naming conventions:
 
 Explore the other vignettes for detailed examples:
 
-- **PCA and Dimensionality Reduction**: Learn about PCA and MDS methods
+- **PCA and MDS**: Learn about PCA and multidimensional scaling methods
+- **Advanced Dimensionality Reduction**: ISOMAP, Self-Organizing Maps, and Autoencoders
 - **Clustering Methods**: Deep dive into k-means, hierarchical, and DBSCAN clustering
 - **Market Basket Analysis**: Association rules mining and recommendations
 

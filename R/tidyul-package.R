@@ -5,6 +5,9 @@
 #' \itemize{
 #'   \item Principal Component Analysis (PCA)
 #'   \item Multidimensional Scaling (MDS) - classical, metric, non-metric, Sammon, Kruskal
+#'   \item ISOMAP (Isometric Feature Mapping)
+#'   \item Self-Organizing Maps (SOM/Kohonen networks)
+#'   \item Autoencoders for nonlinear dimensionality reduction
 #'   \item Hierarchical Clustering
 #'   \item K-Means and K-Medoids (PAM/CLARA)
 #'   \item DBSCAN (Density-Based Clustering)
@@ -22,6 +25,9 @@
 #' \itemize{
 #'   \item \code{\link{tidy_pca}}: Principal Component Analysis
 #'   \item \code{\link{tidy_mds}}: Multidimensional Scaling (unified interface)
+#'   \item \code{\link{tidy_isomap}}: ISOMAP (Isometric Feature Mapping)
+#'   \item \code{\link{tidy_som}}: Self-Organizing Maps (Kohonen networks)
+#'   \item \code{\link{tidy_autoencoder}}: Neural network autoencoders
 #' }
 #'
 #' **Clustering:**

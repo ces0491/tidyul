@@ -238,18 +238,22 @@ create_cluster_dashboard <- function(data, cluster_col = "cluster", validation_m
 
   # 3. If validation metrics provided, create metrics plot
   if (!is.null(validation_metrics)) {
-    # Create a text plot with metrics
-    metrics_text <- sprintf(
-      "Validation Metrics\n\nNumber of Clusters: %d\nAvg Silhouette: %.3f\nMin Size: %d\nMax Size: %d",
-      validation_metrics$k,
-      validation_metrics$avg_silhouette %||% NA,
-      validation_metrics$min_size,
-      validation_metrics$max_size
-    )
+    # Validate that validation_metrics has required fields
+    required_fields <- c("k", "min_size", "max_size")
+    if (all(required_fields %in% names(validation_metrics))) {
+      # Create a text plot with metrics
+      metrics_text <- sprintf(
+        "Validation Metrics\n\nNumber of Clusters: %d\nAvg Silhouette: %.3f\nMin Size: %d\nMax Size: %d",
+        validation_metrics$k,
+        validation_metrics$avg_silhouette %||% NA,
+        validation_metrics$min_size,
+        validation_metrics$max_size
+      )
 
-    plots[[3]] <- ggplot2::ggplot() +
-      ggplot2::annotate("text", x = 0.5, y = 0.5, label = metrics_text, size = 5) +
-      ggplot2::theme_void()
+      plots[[3]] <- ggplot2::ggplot() +
+        ggplot2::annotate("text", x = 0.5, y = 0.5, label = metrics_text, size = 5) +
+        ggplot2::theme_void()
+    }
   }
 
   # Combine plots

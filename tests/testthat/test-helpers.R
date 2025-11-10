@@ -144,7 +144,7 @@ test_that("create_cluster_dashboard creates comprehensive dashboard", {
 
   km_result <- tidy_kmeans(test_data, k = 3)
   augmented_data <- augment_kmeans(km_result, test_data)
-  dashboard <- create_cluster_dashboard(augmented_data, test_data, cluster_col = "cluster")
+  dashboard <- create_cluster_dashboard(augmented_data, cluster_col = "cluster")
 
   expect_type(dashboard, "list")
   expect_true(length(dashboard) > 0)

@@ -5,8 +5,9 @@ Version: 0.1.0
 Authors@R: person("Cesaire", "Tobias", email = "cesaire@sheetsolved.com", role = c("aut", "cre"))
 Description: A comprehensive toolkit for unsupervised learning analysis built on tidyverse principles.
     Provides simplified interfaces for principal component analysis (PCA), multidimensional scaling (MDS),
-    hierarchical clustering, k-means, k-medoids (PAM/CLARA), DBSCAN, market basket analysis, and more.
-    All functions follow tidy data principles with extensive documentation and examples.
+    ISOMAP, self-organizing maps (SOM), autoencoders, hierarchical clustering, k-means, k-medoids (PAM/CLARA),
+    DBSCAN, market basket analysis, and more. All functions follow tidy data principles with extensive
+    documentation and examples.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -34,7 +35,10 @@ Suggests:
     testthat (>= 3.0.0),
     mclust,
     arules (>= 1.6.0),
-    arulesViz (>= 1.5.0)
+    arulesViz (>= 1.5.0),
+    kohonen (>= 3.0.0),
+    Rdimtools (>= 1.0.0),
+    h2o (>= 3.30.0)
 VignetteBuilder: knitr
 URL: https://github.com/ces0491/tidyul
 BugReports: https://github.com/ces0491/tidyul/issues
