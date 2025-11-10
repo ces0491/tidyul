@@ -205,7 +205,7 @@ plot_knn_dist <- function(data, k = 4, add_suggestion = TRUE, percentile = 0.95)
 
   # Create plot
   p <- ggplot2::ggplot(knn_data, ggplot2::aes(x = seq_along(knn_dist), y = knn_dist)) +
-    ggplot2::geom_line(color = "steelblue", size = 1) +
+    ggplot2::geom_line(color = "steelblue", linewidth = 1) +
     ggplot2::labs(
       title = paste0("k-NN Distance Plot (k = ", k, ")"),
       subtitle = "Look for 'elbow' or 'knee' to determine eps",

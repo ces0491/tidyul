@@ -115,3 +115,36 @@ test_that("tidy_hclust works with iris data", {
   expect_s3_class(result, "tidy_hclust")
   expect_equal(length(result$model$order), nrow(iris))
 })
+
+test_that("tidy_hclust handles scale parameter", {
+  test_data <- data.frame(
+    x1 = rnorm(50, mean = 100, sd = 10),  # Different scales
+    x2 = rnorm(50, mean = 1, sd = 0.1)
+  )
+
+  result_no_scale <- tidy_hclust(test_data, scale = FALSE)
+  result_with_scale <- tidy_hclust(test_data, scale = TRUE)
+
+  expect_s3_class(result_no_scale, "tidy_hclust")
+  expect_s3_class(result_with_scale, "tidy_hclust")
+  expect_false(result_no_scale$scaled)
+  expect_true(result_with_scale$scaled)
+
+  # Results should be different due to scaling
+  expect_false(identical(result_no_scale$dist, result_with_scale$dist))
+})
+
+test_that("tidy_hclust scaled attribute is stored correctly", {
+  test_data <- data.frame(
+    x1 = rnorm(30),
+    x2 = rnorm(30)
+  )
+
+  result_scaled <- tidy_hclust(test_data, scale = TRUE)
+  result_unscaled <- tidy_hclust(test_data, scale = FALSE)
+
+  expect_true("scaled" %in% names(result_scaled))
+  expect_true("scaled" %in% names(result_unscaled))
+  expect_true(result_scaled$scaled)
+  expect_false(result_unscaled$scaled)
+})

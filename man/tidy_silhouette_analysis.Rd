@@ -10,7 +10,8 @@ tidy_silhouette_analysis(
   method = "kmeans",
   nstart = 25,
   dist_method = "euclidean",
-  linkage_method = "average"
+  linkage_method = "average",
+  scale = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ tidy_silhouette_analysis(
 \item{dist_method}{Distance metric (default: "euclidean")}
 
 \item{linkage_method}{If hclust, linkage method (default: "average")}
+
+\item{scale}{Logical; if TRUE, scale data before clustering (default: FALSE)}
 }
 \value{
 A tibble with k and average silhouette widths

@@ -160,3 +160,44 @@ test_that("tidy_silhouette works with PAM clustering", {
 
   expect_s3_class(sil_result, "tidy_silhouette")
 })
+
+test_that("tidy_silhouette_analysis handles scale parameter", {
+  skip_if_not_installed("cluster")
+
+  test_data <- data.frame(
+    x1 = rnorm(50, mean = 100, sd = 10),  # Different scales
+    x2 = rnorm(50, mean = 1, sd = 0.1)
+  )
+
+  result_no_scale <- tidy_silhouette_analysis(test_data, max_k = 5, scale = FALSE)
+  result_with_scale <- tidy_silhouette_analysis(test_data, max_k = 5, scale = TRUE)
+
+  expect_s3_class(result_no_scale, "data.frame")
+  expect_s3_class(result_with_scale, "data.frame")
+  expect_true(all(c("k", "avg_sil_width") %in% names(result_no_scale)))
+  expect_true(all(c("k", "avg_sil_width") %in% names(result_with_scale)))
+
+  # Results should be different due to scaling
+  expect_false(identical(result_no_scale$avg_sil_width, result_with_scale$avg_sil_width))
+})
+
+test_that("tidy_silhouette_analysis works with hclust method and scale", {
+  skip_if_not_installed("cluster")
+
+  test_data <- data.frame(
+    x1 = rnorm(50),
+    x2 = rnorm(50)
+  )
+
+  result <- tidy_silhouette_analysis(
+    test_data,
+    max_k = 5,
+    method = "hclust",
+    linkage_method = "average",
+    scale = TRUE
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 4) # k = 2 to 5
+  expect_true(all(c("k", "avg_sil_width") %in% names(result)))
+})

@@ -62,14 +62,21 @@ tidy_silhouette <- function(clusters, dist_mat) {
 #' @param nstart If kmeans, number of random starts (default: 25)
 #' @param dist_method Distance metric (default: "euclidean")
 #' @param linkage_method If hclust, linkage method (default: "average")
+#' @param scale Logical; if TRUE, scale data before clustering (default: FALSE)
 #'
 #' @return A tibble with k and average silhouette widths
 #' @export
 tidy_silhouette_analysis <- function(data, max_k = 10, method = "kmeans",
                                      nstart = 25, dist_method = "euclidean",
-                                     linkage_method = "average") {
+                                     linkage_method = "average", scale = FALSE) {
 
   data_numeric <- data %>% dplyr::select(where(is.numeric))
+
+  # Scale if requested
+  if (scale) {
+    data_numeric <- scale(data_numeric)
+  }
+
   dist_mat <- stats::dist(data_numeric, method = dist_method)
 
   # Compute silhouette for k = 2 to max_k

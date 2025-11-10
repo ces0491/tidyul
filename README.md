@@ -74,8 +74,8 @@ plot_clusters(augmented_data, cluster_col = "cluster",
 ### Hierarchical Clustering
 
 ```r
-# Perform hierarchical clustering
-hc_result <- tidy_hclust(USArrests, method = "average", distance = "euclidean")
+# Perform hierarchical clustering with automatic scaling
+hc_result <- tidy_hclust(USArrests, method = "average", distance = "euclidean", scale = TRUE)
 
 # Plot dendrogram
 tidy_dendrogram(hc_result, k = 4)
@@ -166,8 +166,8 @@ recommendations <- recommend_products(rules, basket = basket, top_n = 5)
 ### Validation and Model Selection
 
 ```r
-# Silhouette analysis
-sil_results <- tidy_silhouette_analysis(iris, max_k = 10)
+# Silhouette analysis with scaling
+sil_results <- tidy_silhouette_analysis(iris, max_k = 10, scale = TRUE)
 plot_silhouette(sil_results)
 
 # Gap statistic

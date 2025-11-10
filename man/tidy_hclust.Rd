@@ -4,7 +4,13 @@
 \alias{tidy_hclust}
 \title{Tidy Hierarchical Clustering}
 \usage{
-tidy_hclust(data, method = "average", distance = "euclidean", cols = NULL)
+tidy_hclust(
+  data,
+  method = "average",
+  distance = "euclidean",
+  cols = NULL,
+  scale = FALSE
+)
 }
 \arguments{
 \item{data}{A data frame, tibble, or dist object}
@@ -14,6 +20,8 @@ tidy_hclust(data, method = "average", distance = "euclidean", cols = NULL)
 \item{distance}{Distance metric if data is not a dist object (default: "euclidean")}
 
 \item{cols}{Columns to include (tidy select). If NULL, uses all numeric columns.}
+
+\item{scale}{Logical; if TRUE, scale data before computing distances (default: FALSE)}
 }
 \value{
 A list of class "tidy_hclust" containing:
@@ -22,6 +30,7 @@ A list of class "tidy_hclust" containing:
 \item dist: distance matrix used
 \item method: linkage method used
 \item data: original data (for plotting)
+\item scaled: logical indicating if data was scaled
 }
 }
 \description{
@@ -33,5 +42,8 @@ hc_result <- tidy_hclust(USArrests, method = "average")
 
 # With specific distance
 hc_result <- tidy_hclust(mtcars, method = "complete", distance = "manhattan")
+
+# With scaling
+hc_result <- tidy_hclust(iris[, 1:4], method = "average", scale = TRUE)
 
 }

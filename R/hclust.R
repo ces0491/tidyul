@@ -6,6 +6,7 @@
 #' @param method Agglomeration method: "ward.D2", "single", "complete", "average" (default), "mcquitty", "median", "centroid"
 #' @param distance Distance metric if data is not a dist object (default: "euclidean")
 #' @param cols Columns to include (tidy select). If NULL, uses all numeric columns.
+#' @param scale Logical; if TRUE, scale data before computing distances (default: FALSE)
 #'
 #' @return A list of class "tidy_hclust" containing:
 #' \itemize{
@@ -13,6 +14,7 @@
 #'   \item dist: distance matrix used
 #'   \item method: linkage method used
 #'   \item data: original data (for plotting)
+#'   \item scaled: logical indicating if data was scaled
 #' }
 #'
 #' @examples
@@ -22,13 +24,17 @@
 #' # With specific distance
 #' hc_result <- tidy_hclust(mtcars, method = "complete", distance = "manhattan")
 #'
+#' # With scaling
+#' hc_result <- tidy_hclust(iris[, 1:4], method = "average", scale = TRUE)
+#'
 #' @export
-tidy_hclust <- function(data, method = "average", distance = "euclidean", cols = NULL) {
+tidy_hclust <- function(data, method = "average", distance = "euclidean", cols = NULL, scale = FALSE) {
 
   # Handle dist object
   if (inherits(data, "dist")) {
     dist_mat <- data
     data_orig <- NULL
+    scaled <- FALSE
   } else {
     # Select columns
     if (!is.null(cols)) {
@@ -38,9 +44,19 @@ tidy_hclust <- function(data, method = "average", distance = "euclidean", cols =
       data_selected <- data %>% dplyr::select(where(is.numeric))
     }
 
+    # Store original data
+    data_orig <- data_selected
+
+    # Scale if requested
+    if (scale) {
+      data_selected <- scale(data_selected)
+      scaled <- TRUE
+    } else {
+      scaled <- FALSE
+    }
+
     # Compute distance
     dist_mat <- tidy_dist(data_selected, method = distance)
-    data_orig <- data_selected
   }
 
   # Perform hierarchical clustering
@@ -52,7 +68,8 @@ tidy_hclust <- function(data, method = "average", distance = "euclidean", cols =
     dist = dist_mat,
     method = method,
     distance_method = distance,
-    data = data_orig
+    data = data_orig,
+    scaled = scaled
   )
 
   class(result) <- c("tidy_hclust", "list")
@@ -243,6 +260,9 @@ print.tidy_hclust <- function(x, ...) {
   cat("=============================\n\n")
   cat("Linkage method:", x$method, "\n")
   cat("Distance method:", x$distance_method, "\n")
+  if (!is.null(x$scaled)) {
+    cat("Data scaled:", ifelse(x$scaled, "Yes", "No"), "\n")
+  }
   cat("Number of observations:", length(x$model$order), "\n")
   cat("Number of merges:", nrow(x$model$merge), "\n\n")
 

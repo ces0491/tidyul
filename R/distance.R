@@ -24,7 +24,12 @@ tidy_dist <- function(data, method = "euclidean", cols = NULL, ...) {
     dist_mat <- tidy_gower(data_selected, ...)
   } else {
     # Convert to matrix for standard methods
-    data_matrix <- as.matrix(data_selected %>% dplyr::select(where(is.numeric)))
+    # Handle case where data is already a matrix (e.g., from scale())
+    if (is.matrix(data_selected)) {
+      data_matrix <- data_selected
+    } else {
+      data_matrix <- as.matrix(data_selected %>% dplyr::select(where(is.numeric)))
+    }
     dist_mat <- stats::dist(data_matrix, method = method)
   }
 
