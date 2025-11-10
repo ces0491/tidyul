@@ -6,7 +6,8 @@ utils::globalVariables(c(
   "n", "k", "tot_withinss", "gap", "SE.sim", "avg_sil_width",
   "sil_width", "neighbor", "confidence", "support", "lift", "lhs", "rhs",
   "id1", "id2", "distance", "knn_dist", "is_core", "is_noise",
-  "x_end", "y_end", ":=", "avg_silhouette",
+  "x_end", "y_end", ":=", "avg_silhouette", "plot_order",
+  "xmin", "xmax", "ymin", "ymax",
   # stats/base functions
   "where", "var", "rnorm", "runif", "setNames", "head"
 ))

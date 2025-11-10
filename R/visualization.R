@@ -79,7 +79,7 @@ plot_clusters <- function(data, cluster_col = "cluster", x_col = NULL, y_col = N
 plot_elbow <- function(wss_data, add_line = FALSE, suggested_k = NULL) {
 
   p <- ggplot2::ggplot(wss_data, ggplot2::aes(x = k, y = tot_withinss)) +
-    ggplot2::geom_line(color = "steelblue", size = 1) +
+    ggplot2::geom_line(color = "steelblue", linewidth = 1) +
     ggplot2::geom_point(color = "steelblue", size = 3) +
     ggplot2::labs(
       title = "Elbow Method - Total Within-Cluster Sum of Squares",
@@ -168,7 +168,7 @@ plot_variance_explained <- function(variance_tbl, threshold = 0.8) {
   # Create dual-axis plot
   p1 <- ggplot2::ggplot(plot_data, ggplot2::aes(x = pc_num)) +
     ggplot2::geom_col(ggplot2::aes(y = prop_variance), fill = "steelblue", alpha = 0.7) +
-    ggplot2::geom_line(ggplot2::aes(y = cum_variance), color = "red", size = 1) +
+    ggplot2::geom_line(ggplot2::aes(y = cum_variance), color = "red", linewidth = 1) +
     ggplot2::geom_point(ggplot2::aes(y = cum_variance), color = "red", size = 2) +
     ggplot2::geom_hline(yintercept = threshold, linetype = "dashed", color = "darkgreen") +
     ggplot2::labs(
@@ -533,4 +533,143 @@ plot_hclust_results <- function(hclust_obj, data, k, x_col = NULL, y_col = NULL,
   } else {
     p_clusters
   }
+}
+
+
+#' Plot Classic Silhouette Diagram
+#'
+#' Create a classic silhouette plot similar to base R's plot.silhouette(),
+#' showing individual silhouette widths for each observation grouped by cluster,
+#' with a dashed vertical line indicating the average silhouette width.
+#'
+#' @param sil_obj Either a tidy_silhouette object, a silhouette object from cluster package,
+#'   or NULL (if providing clusters and dist_mat)
+#' @param clusters Optional vector of cluster assignments (used if sil_obj is NULL)
+#' @param dist_mat Optional distance matrix (used if sil_obj is NULL)
+#' @param title Plot title (default: "Silhouette Plot - Cluster Assignment Quality")
+#' @param colors Vector of colors for clusters (default: uses standard palette)
+#' @param border Color for bar borders (default: NA for no border)
+#'
+#' @return A ggplot object
+#' @export
+#' @examples
+#' \dontrun{
+#' # Using tidy_silhouette object
+#' sil_obj <- tidy_silhouette(clusters, dist_mat)
+#' plot_silhouette_classic(sil_obj)
+#'
+#' # Using clusters and distance matrix directly
+#' plot_silhouette_classic(clusters = my_clusters, dist_mat = my_dist)
+#'
+#' # Using base R silhouette object
+#' sil <- cluster::silhouette(my_clusters, my_dist)
+#' plot_silhouette_classic(sil)
+#' }
+plot_silhouette_classic <- function(sil_obj = NULL, clusters = NULL, dist_mat = NULL,
+                                    title = "Silhouette Plot - Cluster Assignment Quality",
+                                    colors = NULL, border = NA) {
+
+  # Handle different input types
+  if (!is.null(sil_obj)) {
+    if (inherits(sil_obj, "tidy_silhouette")) {
+      sil_data <- sil_obj$silhouette_data
+      avg_width <- sil_obj$avg_width
+    } else if (inherits(sil_obj, "silhouette")) {
+      # Base R silhouette object from cluster package
+      sil_data <- tibble::as_tibble(sil_obj[, 1:3]) %>%
+        dplyr::rename(
+          cluster = cluster,
+          neighbor = neighbor,
+          sil_width = sil_width
+        ) %>%
+        dplyr::mutate(.id = seq_len(dplyr::n()), .before = 1)
+      avg_width <- mean(sil_data$sil_width)
+    } else {
+      stop("sil_obj must be a tidy_silhouette or silhouette object, or provide clusters and dist_mat")
+    }
+  } else if (!is.null(clusters) && !is.null(dist_mat)) {
+    # Create silhouette from clusters and distance matrix
+    sil <- cluster::silhouette(clusters, dist_mat)
+    sil_data <- tibble::as_tibble(sil[, 1:3]) %>%
+      dplyr::rename(
+        cluster = cluster,
+        neighbor = neighbor,
+        sil_width = sil_width
+      ) %>%
+      dplyr::mutate(.id = seq_len(dplyr::n()), .before = 1)
+    avg_width <- mean(sil_data$sil_width)
+  } else {
+    stop("Must provide either sil_obj, or both clusters and dist_mat")
+  }
+
+  # Order data by cluster and silhouette width (descending within each cluster)
+  sil_data <- sil_data %>%
+    dplyr::arrange(cluster, dplyr::desc(sil_width)) %>%
+    dplyr::mutate(
+      cluster = as.factor(cluster),
+      plot_order = dplyr::row_number(),
+      ymin = plot_order - 0.5,
+      ymax = plot_order + 0.5,
+      xmin = 0,
+      xmax = sil_width
+    )
+
+  # Calculate cluster sizes and positions for y-axis labels
+  cluster_info <- sil_data %>%
+    dplyr::group_by(cluster) %>%
+    dplyr::summarise(
+      n = dplyr::n(),
+      avg_sil = mean(sil_width),
+      mid_pos = mean(plot_order),
+      .groups = "drop"
+    )
+
+  # Set up colors
+  n_clusters <- length(unique(sil_data$cluster))
+  if (is.null(colors)) {
+    colors <- scales::hue_pal()(n_clusters)
+  }
+  names(colors) <- as.character(sort(unique(sil_data$cluster)))
+
+  # Create the plot using geom_rect for proper horizontal bars
+  p <- ggplot2::ggplot(sil_data) +
+    ggplot2::geom_rect(
+      ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = cluster),
+      color = border
+    ) +
+    ggplot2::geom_vline(xintercept = avg_width, linetype = "dashed", color = "red", linewidth = 0.8) +
+    ggplot2::scale_fill_manual(values = colors) +
+    ggplot2::scale_y_continuous(
+      breaks = cluster_info$mid_pos,
+      labels = paste0("Cluster ", cluster_info$cluster, "\n(n=", cluster_info$n, ")")
+    ) +
+    ggplot2::labs(
+      title = title,
+      subtitle = sprintf("Average silhouette width: %.3f", avg_width),
+      x = "Silhouette Width",
+      y = "",
+      fill = "Cluster"
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      panel.grid.major.y = ggplot2::element_blank(),
+      panel.grid.minor.y = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_text(size = 9),
+      legend.position = "right"
+    )
+
+  # Add annotation for average line
+  p <- p +
+    ggplot2::annotate(
+      "text",
+      x = avg_width,
+      y = max(sil_data$plot_order) + 0.5,
+      label = sprintf("Avg: %.3f", avg_width),
+      color = "red",
+      hjust = -0.1,
+      size = 3.5,
+      vjust = 0
+    )
+
+  p
 }

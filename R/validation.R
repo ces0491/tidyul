@@ -141,7 +141,7 @@ plot_silhouette <- function(sil_obj) {
     optimal_k <- attr(sil_obj, "optimal_k")
 
     p <- ggplot2::ggplot(sil_obj, ggplot2::aes(x = k, y = avg_sil_width)) +
-      ggplot2::geom_line(color = "steelblue", size = 1) +
+      ggplot2::geom_line(color = "steelblue", linewidth = 1) +
       ggplot2::geom_point(color = "steelblue", size = 3) +
       ggplot2::geom_point(
         data = sil_obj %>% dplyr::filter(k == optimal_k),
@@ -242,7 +242,7 @@ plot_gap_stat <- function(gap_obj, show_methods = FALSE) {
   gap_data <- gap_obj$gap_data
 
   p <- ggplot2::ggplot(gap_data, ggplot2::aes(x = k, y = gap)) +
-    ggplot2::geom_line(color = "steelblue", size = 1) +
+    ggplot2::geom_line(color = "steelblue", linewidth = 1) +
     ggplot2::geom_point(color = "steelblue", size = 3) +
     ggplot2::geom_errorbar(
       ggplot2::aes(ymin = gap - SE.sim, ymax = gap + SE.sim),

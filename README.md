@@ -170,6 +170,12 @@ recommendations <- recommend_products(rules, basket = basket, top_n = 5)
 sil_results <- tidy_silhouette_analysis(iris, max_k = 10, scale = TRUE)
 plot_silhouette(sil_results)
 
+# Classic silhouette plot with average line
+clusters <- tidy_kmeans(iris, k = 3)$cluster
+dist_mat <- dist(iris[, 1:4])
+sil <- cluster::silhouette(clusters, dist_mat)
+plot_silhouette_classic(sil)  # Includes dashed line at average
+
 # Gap statistic
 gap_results <- tidy_gap_stat(iris, max_k = 10, B = 50)
 plot_gap_stat(gap_results, show_methods = TRUE)
@@ -281,7 +287,8 @@ Built-in plotting functions using ggplot2:
 |----------|-------------|
 | `plot_clusters()` | Cluster scatter plot |
 | `plot_mds()` | MDS configuration plot |
-| `plot_silhouette()` | Silhouette plot |
+| `plot_silhouette()` | Silhouette plot (multiple k) |
+| `plot_silhouette_classic()` | Classic silhouette plot with average line |
 | `plot_gap_stat()` | Gap statistic plot |
 | `plot_knn_dist()` | k-NN distance plot (DBSCAN) |
 | `plot_elbow()` | Elbow plot for k-means |
