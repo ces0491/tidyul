@@ -8,7 +8,7 @@ This guide will get you started with the most common unsupervised learning tasks
 
 ```r
 # Install from GitHub
-remotes::install_github("yourusername/tidyul")
+remotes::install_github("ces0491/tidyul")
 
 # Load the package
 library(tidyul)
@@ -264,9 +264,5 @@ pam_result <- tidy_pam(mixed_data, k = 3, metric = "gower")
 
 - Documentation: `?function_name`
 - Package help: `?tidyul`
-- Report issues: GitHub Issues
-- Ask questions: GitHub Discussions
 
 ---
-
-Happy analyzing! 🎉

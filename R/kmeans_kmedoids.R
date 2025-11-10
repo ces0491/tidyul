@@ -22,7 +22,7 @@
 #' km_result <- tidy_kmeans(iris, k = 3)
 #'
 #' # Specify columns
-#' km_result <- tidy_kmeans(mtcars, k = 3, cols = c(mpg, hp, wt))
+#' km_result <- tidy_kmeans(mtcars, k = 3, cols = c("mpg", "hp", "wt"))
 #'
 #' @export
 tidy_kmeans <- function(data, k, cols = NULL, nstart = 25, iter_max = 100,
@@ -216,7 +216,8 @@ augment_pam <- function(pam_obj, data) {
 #'
 #' @examples
 #' # CLARA for large datasets
-#' clara_result <- tidy_clara(large_data, k = 5, samples = 100)
+#' large_data_list <- create_example_data(n = 500, k = 5, p = 4)
+#' clara_result <- tidy_clara(large_data_list$data, k = 5, samples = 100, sampsize = 40)
 #'
 #' @export
 tidy_clara <- function(data, k, metric = "euclidean", samples = 50, sampsize = NULL) {

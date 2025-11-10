@@ -11,7 +11,7 @@ if (!requireNamespace("remotes", quietly = TRUE)) {
 }
 
 # Install tidyul
-remotes::install_github("yourusername/tidyul")
+remotes::install_github("ces0491/tidyul")
 ```
 
 ## Local Installation (For Development)
@@ -169,7 +169,7 @@ To update to the latest version:
 
 ```r
 # From GitHub
-remotes::install_github("yourusername/tidyul", force = TRUE)
+remotes::install_github("ces0491/tidyul", force = TRUE)
 
 # From local source
 devtools::install()
@@ -186,9 +186,7 @@ remove.packages("tidyul")
 ## Additional Resources
 
 - Package documentation: `help(package = "tidyul")`
-- README: `https://github.com/yourusername/tidyul/blob/main/README.md`
-- Issues: `https://github.com/yourusername/tidyul/issues`
+- README: `https://github.com/ces0491/tidyul/blob/main/README.md`
+- Issues: `https://github.com/ces0491/tidyul/issues`
 
 ---
-
-For more help, please open an issue on GitHub or contact the maintainers.

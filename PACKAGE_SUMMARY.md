@@ -2,7 +2,7 @@
 
 ## Package Overview
 
-**tidyul** is a comprehensive R package for unsupervised learning built on tidyverse principles. It covers all topics from your STA5077Z practicals and provides a unified, tidy interface for common unsupervised learning tasks.
+**tidyul** is a comprehensive R package for unsupervised learning built on tidyverse principles.
 
 ## What's Included
 
@@ -14,8 +14,6 @@
 - `get_pca_variance()` - Get variance table
 - `augment_pca()` - Add PC scores to data
 
-**Covers:** PCA tutorial from your pracs
-
 ### 2. **Multidimensional Scaling (MDS)** ✅
 - `tidy_mds()` - Unified MDS interface
 - `tidy_mds_classical()` - Classical MDS (cmdscale)
@@ -24,8 +22,6 @@
 - `tidy_mds_kruskal()` - Kruskal's isoMDS
 - `plot_mds()` - Visualization
 
-**Covers:** MDS tutorial covering all 5 methods from your pracs
-
 ### 3. **Hierarchical Clustering** ✅
 - `tidy_hclust()` - Hierarchical clustering
 - `tidy_cutree()` - Cut dendrogram
@@ -33,16 +29,12 @@
 - `augment_hclust()` - Add clusters to data
 - Supports all linkage methods: average, complete, single, Ward's
 
-**Covers:** Prac 1 - hierarchical clustering with different linkages
-
 ### 4. **K-Means and K-Medoids** ✅
 - `tidy_kmeans()` - K-means with tidy output
 - `tidy_pam()` - PAM (Partitioning Around Medoids)
 - `tidy_clara()` - CLARA for large datasets
 - `augment_kmeans()` / `augment_pam()` - Add clusters
 - `calc_wss()` - Within-cluster sum of squares (elbow method)
-
-**Covers:** Prac 2 - k-means, PAM, CLARA, initialization sensitivity
 
 ### 5. **DBSCAN (Density-Based Clustering)** ✅
 - `tidy_dbscan()` - DBSCAN clustering
@@ -52,15 +44,11 @@
 - `explore_dbscan_params()` - Parameter exploration
 - `augment_dbscan()` - Add clusters to data
 
-**Covers:** Prac 3 - DBSCAN parameter exploration
-
 ### 6. **Distance/Dissimilarity Measures** ✅
 - `tidy_gower()` - Gower distance for mixed data types
 - `tidy_dist()` - Unified distance interface
 - `standardize_data()` - Center and scale
 - `compare_distances()` - Compare multiple methods
-
-**Covers:** Prac 1 - Gower distance implementation
 
 ### 7. **Validation Metrics** ✅
 - `tidy_silhouette()` - Silhouette analysis
@@ -72,8 +60,6 @@
 - `calc_validation_metrics()` - Comprehensive metrics
 - `compare_clusterings()` - Compare multiple results
 
-**Covers:** Pracs 1-4 - silhouette, gap statistic, cluster comparison
-
 ### 8. **Market Basket Analysis** ✅
 - `tidy_apriori()` - Apriori algorithm with tidy output
 - `tidy_rules()` - Convert rules to tibble
@@ -82,8 +68,6 @@
 - `find_related_items()` - Find associations
 - `recommend_products()` - Product recommendations
 - `visualize_rules()` - Rule visualizations
-
-**Covers:** Prac 5 - Market basket analysis
 
 ### 9. **Visualization Functions** ✅
 - `plot_clusters()` - General cluster visualization
@@ -192,7 +176,6 @@ print(db_result)
 - Works with dplyr, ggplot2, etc.
 
 ### 2. **Comprehensive Coverage**
-- Covers ALL topics from your STA5077Z pracs
 - PCA, MDS (5 methods), hierarchical clustering, k-means, PAM, CLARA, DBSCAN, MBA
 - Gower distance for mixed data types
 - Full validation suite
@@ -261,14 +244,14 @@ cd tidyul
 git init
 git add .
 git commit -m "Initial commit: tidyul package"
-git remote add origin https://github.com/yourusername/tidyul.git
+git remote add origin https://github.com/ces0491/tidyul.git
 git push -u origin main
 ```
 
 Then users can install with:
 
 ```r
-remotes::install_github("yourusername/tidyul")
+remotes::install_github("ces0491/tidyul")
 ```
 
 ## Support
@@ -301,5 +284,3 @@ MIT License - free to use, modify, and distribute.
 ✅ README and guides
 ✅ Installation scripts
 ✅ Test suite
-
-**Everything from your pracs is covered!** 🎉

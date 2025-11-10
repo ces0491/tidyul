@@ -1,6 +1,3 @@
-#' @keywords internal
-"_PACKAGE"
-
 #' tidyul: Tidy Unsupervised Learning
 #'
 #' A comprehensive toolkit for unsupervised learning analysis built on tidyverse principles.
@@ -55,9 +52,8 @@
 #' See the package vignettes for detailed examples:
 #' \code{browseVignettes("tidyul")}
 #'
-#' @docType package
-#' @name tidyul-package
-NULL
+#' @keywords internal
+"_PACKAGE"
 
 ## usethis namespace: start
 #' @importFrom tibble tibble

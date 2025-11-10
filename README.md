@@ -1,7 +1,7 @@
 # tidyul: Tidy Unsupervised Learning <img src="man/figures/logo.png" align="right" height="139"/>
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/yourusername/tidyul/workflows/R-CMD-check/badge.svg)](https://github.com/yourusername/tidyul/actions)
+[![R-CMD-check](https://github.com/ces0491/tidyul/workflows/R-CMD-check/badge.svg)](https://github.com/ces0491/tidyul/actions)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
@@ -27,7 +27,7 @@ You can install tidyul directly from GitHub:
 
 ```r
 # install.packages("remotes")
-remotes::install_github("yourusername/tidyul")
+remotes::install_github("ces0491/tidyul")
 ```
 
 ## Quick Start
@@ -334,35 +334,23 @@ The package includes examples using standard R datasets:
 | Pipe-friendly | ✅ | ❌ | ❌ | ✅ |
 | ggplot2 viz | ✅ | ❌ | ❌ | ✅ |
 
-## Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
 
-## Citation
-
-```r
-citation("tidyul")
-```
-
 ## Acknowledgments
 
-This package builds on the excellent work of:
+This package builds on the work of:
 
 - `cluster` package for PAM/CLARA
 - `dbscan` package for DBSCAN
 - `arules` package for association rules
 - `smacof` package for MDS
 - `MASS` package for classical methods
-- The tidyverse team for design principles
+- The `tidyverse` team for design principles
 
 ## Getting Help
 
 - 📖 Documentation: Run `?tidyul` or `help(package = "tidyul")`
 
 ---
-
-**Happy clustering!** 🎉

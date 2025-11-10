@@ -42,6 +42,7 @@ tidy_summary.default <- function(obj) {
 #' @param y Second value (used if x is NULL)
 #' @return x if not NULL, otherwise y
 #' @keywords internal
+#' @noRd
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }

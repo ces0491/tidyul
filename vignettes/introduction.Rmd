@@ -1,0 +1,230 @@
+---
+title: "Getting Started with tidyul"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with tidyul}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+```{r setup}
+library(tidyul)
+library(dplyr)
+library(ggplot2)
+```
+
+## Introduction
+
+**tidyul** (Tidy Unsupervised Learning) is a comprehensive toolkit for unsupervised learning analysis built on tidyverse principles. This package provides simplified, consistent interfaces for:
+
+- Principal Component Analysis (PCA)
+- Multidimensional Scaling (MDS)
+- Clustering (K-means, PAM, CLARA, Hierarchical, DBSCAN)
+- Distance/Dissimilarity Measures
+- Cluster Validation
+- Market Basket Analysis
+
+All functions follow tidy data principles with consistent interfaces and extensive documentation.
+
+## Philosophy
+
+The tidyul package is built around three core principles:
+
+1. **Tidy Input/Output**: Functions accept and return tidy data frames
+2. **Consistent API**: Similar function names and parameter structures across methods
+3. **Pipe-Friendly**: Designed to work seamlessly with `%>%` pipes
+
+## Basic Workflow
+
+A typical tidyul workflow follows these steps:
+
+1. Prepare your data
+2. Apply an unsupervised learning method
+3. Visualize results
+4. Validate or compare methods (optional)
+
+Let's see this in action with a simple example using the iris dataset.
+
+## Quick Example: K-Means Clustering
+
+```{r kmeans-example}
+# Prepare data (use only numeric columns)
+iris_data <- iris %>% select(-Species)
+
+# Apply k-means clustering
+km_result <- tidy_kmeans(iris_data, k = 3, nstart = 25)
+
+# View cluster centers
+km_result$centers
+
+# Augment original data with cluster assignments
+iris_clustered <- augment_kmeans(km_result, iris_data) %>%
+  mutate(actual_species = iris$Species)
+
+# Preview results
+head(iris_clustered)
+```
+
+### Visualize Clusters
+
+```{r plot-kmeans, fig.width=7, fig.height=5}
+# Plot clusters using augmented data
+plot_clusters(iris_clustered, x_col = "Sepal.Length", y_col = "Sepal.Width")
+
+# Compare with actual species labels
+iris_clustered %>%
+  ggplot(aes(x = Sepal.Length, y = Sepal.Width,
+             color = factor(cluster), shape = actual_species)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(color = "Cluster", shape = "Species",
+       title = "K-Means Clustering vs Actual Species") +
+  theme_minimal()
+```
+
+## Quick Example: PCA
+
+```{r pca-example}
+# Perform PCA
+pca_result <- tidy_pca(iris_data, scale = TRUE)
+
+# View variance explained
+pca_result$variance
+
+# View loadings
+get_pca_loadings(pca_result)
+
+# Augment data with PC scores
+iris_pca <- augment_pca(pca_result, iris_data) %>%
+  mutate(species = iris$Species)
+
+head(iris_pca)
+```
+
+### Visualize PCA
+
+```{r plot-pca, fig.width=7, fig.height=5}
+# Scree plot
+tidy_pca_screeplot(pca_result)
+
+# Biplot with species coloring
+# Note: biplot expects color_by to be a column name in the scores
+# For now, create custom biplot
+iris_pca %>%
+  ggplot(aes(x = PC1, y = PC2, color = species)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(title = "PCA Biplot", color = "Species") +
+  theme_minimal()
+```
+
+## Helper Functions
+
+tidyul includes several helper functions to make your workflow easier:
+
+### Data Standardization
+
+```{r standardize}
+# Standardize data (mean = 0, sd = 1)
+iris_std <- standardize_data(iris_data)
+
+# Check standardization
+colMeans(iris_std) %>% round(10)
+apply(iris_std, 2, sd) %>% round(2)
+```
+
+### Scale to Range
+
+```{r scale-range}
+# Scale to [0, 1] range
+iris_scaled <- scale_to_range(iris_data, new_min = 0, new_max = 1)
+
+summary(iris_scaled)
+```
+
+### Quick Clustering
+
+The `quick_cluster()` function provides rapid clustering analysis with recommendations:
+
+```{r quick-cluster}
+# Quick clustering analysis
+quick_result <- quick_cluster(iris_data, max_k = 6)
+
+# View recommendations
+quick_result$recommendation
+quick_result$summary
+```
+
+## Working with Different Data Types
+
+### Numeric Data
+
+Most tidyul functions work with numeric data:
+
+```{r numeric-data}
+# Create example numeric data
+set.seed(123)
+example_list <- create_example_data(n = 100, k = 3, p = 4)
+numeric_data <- example_list$data
+
+# Apply clustering
+result <- tidy_kmeans(numeric_data, k = 3)
+result_augmented <- augment_kmeans(result, numeric_data)
+plot_clusters(result_augmented)
+```
+
+### Mixed Data Types
+
+For mixed data types (numeric + categorical), use Gower distance:
+
+```{r mixed-data, eval=FALSE}
+# Example with mixed types
+mixed_data <- data.frame(
+  age = rnorm(50, 30, 10),
+  income = rnorm(50, 50000, 15000),
+  education = sample(c("HS", "BS", "MS", "PhD"), 50, replace = TRUE),
+  married = sample(c(TRUE, FALSE), 50, replace = TRUE)
+)
+
+# Calculate Gower distance
+gower_dist <- tidy_gower(mixed_data)
+
+# Use with hierarchical clustering
+hc_result <- tidy_hclust(gower_dist, distance = NULL)
+```
+
+## Function Naming Conventions
+
+tidyul uses consistent naming conventions:
+
+- `tidy_*()`: Main analysis functions (e.g., `tidy_pca()`, `tidy_kmeans()`)
+- `augment_*()`: Add analysis results to original data
+- `get_*()`: Extract specific components from results
+- `plot_*()`: Visualization functions
+- `calc_*()`: Calculation utilities
+
+## Next Steps
+
+Explore the other vignettes for detailed examples:
+
+- **PCA and Dimensionality Reduction**: Learn about PCA and MDS methods
+- **Clustering Methods**: Deep dive into k-means, hierarchical, and DBSCAN clustering
+- **Market Basket Analysis**: Association rules mining and recommendations
+
+## Summary
+
+tidyul makes unsupervised learning in R:
+
+- **Easier**: Consistent, intuitive API
+- **Tidier**: Works seamlessly with tidyverse
+- **More Visual**: Built-in plotting functions
+- **Well-Documented**: Comprehensive help and examples
+
+For more information, see `?tidyul` or visit the package documentation.

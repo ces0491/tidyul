@@ -1,0 +1,323 @@
+## ----include = FALSE----------------------------------------------------------
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+
+
+## ----setup--------------------------------------------------------------------
+library(tidyul)
+library(dplyr)
+library(ggplot2)
+
+
+## ----basic-kmeans-------------------------------------------------------------
+# Prepare iris data
+iris_data <- iris %>% select(-Species)
+
+# Apply k-means with k=3
+km_result <- tidy_kmeans(iris_data, k = 3, nstart = 25)
+
+# View results
+names(km_result)
+
+# Cluster centers
+km_result$centers
+
+# Cluster sizes
+km_result$size
+
+
+## ----plot-kmeans--------------------------------------------------------------
+# Augment original data
+iris_clustered <- augment_kmeans(km_result, iris_data) %>%
+  mutate(species = iris$Species)
+
+# Built-in plot
+plot_clusters(iris_clustered)
+
+# Custom plot
+iris_clustered %>%
+  ggplot(aes(x = Sepal.Length, y = Sepal.Width, color = factor(cluster))) +
+  geom_point(size = 3, alpha = 0.7) +
+  geom_point(data = km_result$centers, aes(x = Sepal.Length, y = Sepal.Width),
+             color = "black", size = 5, shape = 4, stroke = 2) +
+  labs(color = "Cluster", title = "K-Means Clustering (k=3)") +
+  theme_minimal()
+
+
+## ----elbow-method-------------------------------------------------------------
+# Calculate WSS for different k values
+wss_values <- calc_wss(iris_data, max_k = 10)
+
+# Plot elbow curve
+plot_elbow(wss_values)
+
+# Look for the "elbow" where improvement slows
+
+
+## ----silhouette-analysis------------------------------------------------------
+# Analyze silhouettes for different k values
+sil_analysis <- tidy_silhouette_analysis(iris_data, max_k = 6)
+
+sil_analysis
+
+# Plot average silhouette width
+sil_analysis %>%
+  ggplot(aes(x = k, y = avg_sil_width)) +
+  geom_line(size = 1) +
+  geom_point(size = 3) +
+  labs(title = "Average Silhouette Width by k",
+       y = "Average Silhouette Width",
+       x = "Number of Clusters (k)") +
+  theme_minimal()
+
+
+## ----gap-statistic------------------------------------------------------------
+# Calculate gap statistic (may take a moment)
+gap_result <- tidy_gap_stat(iris_data, max_k = 6, B = 50)
+
+# Plot
+plot_gap_stat(gap_result)
+
+# Optimal k
+gap_result$optimal_k
+
+
+## ----kmeans-tips--------------------------------------------------------------
+# Always use nstart > 1 to avoid local minima
+km_stable <- tidy_kmeans(iris_data, k = 3, nstart = 50)
+
+# Standardize data if variables have different scales
+iris_std <- standardize_data(iris_data)
+km_std <- tidy_kmeans(iris_std, k = 3, nstart = 25)
+
+# Compare results
+table(
+  Original = augment_kmeans(km_result, iris_data)$cluster,
+  Standardized = augment_kmeans(km_std, iris_std)$cluster
+)
+
+
+## ----basic-pam----------------------------------------------------------------
+# Apply PAM
+pam_result <- tidy_pam(iris_data, k = 3)
+
+# View medoids
+pam_result$medoids
+
+# Plot
+pam_augmented <- augment_pam(pam_result, iris_data)
+plot_clusters(pam_augmented)
+
+
+## ----pam-vs-kmeans------------------------------------------------------------
+# Compare with k-means
+km_clusters <- augment_kmeans(km_result, iris_data)$cluster
+pam_clusters <- augment_pam(pam_result, iris_data)$cluster
+
+# Agreement between methods
+table(KMeans = km_clusters, PAM = pam_clusters)
+
+# Calculate adjusted Rand index
+# library(mclust)
+# adjustedRandIndex(km_clusters, pam_clusters)
+
+
+## ----clara--------------------------------------------------------------------
+# Create larger dataset
+set.seed(123)
+large_list <- create_example_data(n = 1000, k = 4, p = 5)
+large_data <- large_list$data
+
+# CLARA is efficient for large data
+clara_result <- tidy_clara(large_data, k = 4, samples = 50, sampsize = 100)
+
+# View results
+clara_result$size
+
+# Plot (sample for visualization)
+clara_augmented <- cbind(large_data, cluster = clara_result$clusters$cluster)
+plot_clusters(clara_augmented)
+
+
+## ----basic-hclust-------------------------------------------------------------
+# Perform hierarchical clustering
+hc_result <- tidy_hclust(iris_data, method = "complete")
+
+# View dendrogram
+plot_dendrogram(hc_result)
+
+
+## ----linkage-methods----------------------------------------------------------
+# Complete linkage (default)
+hc_complete <- tidy_hclust(iris_data, method = "complete")
+
+# Average linkage
+hc_average <- tidy_hclust(iris_data, method = "average")
+
+# Single linkage
+hc_single <- tidy_hclust(iris_data, method = "single")
+
+# Ward's method (minimizes within-cluster variance)
+hc_ward <- tidy_hclust(iris_data, method = "ward.D2")
+
+# Compare dendrograms
+plot_dendrogram(hc_ward, title = "Hierarchical Clustering (Ward's Method)")
+
+
+## ----cut-dendrogram-----------------------------------------------------------
+# Cut at k=3 clusters
+clusters <- tidy_cutree(hc_result, k = 3)
+
+head(clusters)
+
+# Add clusters to data manually
+iris_hc <- iris_data %>%
+  mutate(cluster = clusters$cluster)
+
+# Visualize
+iris_hc %>%
+  ggplot(aes(x = Sepal.Length, y = Sepal.Width, color = factor(cluster))) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(color = "Cluster", title = "Hierarchical Clustering (k=3)") +
+  theme_minimal()
+
+
+## ----hclust-optimal-k---------------------------------------------------------
+# Find optimal number of clusters
+optimal <- optimal_hclust_k(hc_result, max_k = 10)
+
+optimal
+
+
+## ----basic-dbscan-------------------------------------------------------------
+# Create data with clear clusters and noise
+set.seed(123)
+cluster_data <- data.frame(
+  x = c(rnorm(50, 0, 0.3), rnorm(50, 3, 0.3), runif(10, -2, 5)),
+  y = c(rnorm(50, 0, 0.3), rnorm(50, 3, 0.3), runif(10, -2, 5))
+)
+
+# Apply DBSCAN
+db_result <- tidy_dbscan(cluster_data, eps = 0.5, minPts = 5)
+
+# View results (cluster 0 = noise)
+table(db_result$clusters$cluster)
+
+# Plot
+augment_dbscan(db_result, cluster_data) %>%
+  ggplot(aes(x = x, y = y, color = factor(cluster))) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(color = "Cluster", title = "DBSCAN Clustering (0 = Noise)") +
+  scale_color_manual(values = c("0" = "gray50", "1" = "red", "2" = "blue")) +
+  theme_minimal()
+
+
+## ----choose-eps---------------------------------------------------------------
+# Calculate k-NN distances
+knn_dist <- tidy_knn_dist(cluster_data, k = 5)
+
+# Plot k-NN distance
+plot_knn_dist(knn_dist) +
+  labs(title = "k-NN Distance Plot (k=5)",
+       subtitle = "Look for 'knee' to determine eps")
+
+# Get suggested eps
+suggested_eps <- suggest_eps(cluster_data, k = 5)
+suggested_eps
+
+
+## ----dbscan-params------------------------------------------------------------
+# Explore different parameter combinations
+param_results <- explore_dbscan_params(
+  cluster_data,
+  eps_range = c(0.3, 0.8),
+  minPts_range = c(3, 10)
+)
+
+param_results %>%
+  ggplot(aes(x = eps, y = minPts, fill = n_clusters)) +
+  geom_tile() +
+  geom_text(aes(label = n_clusters), color = "white") +
+  scale_fill_gradient(low = "blue", high = "red") +
+  labs(title = "DBSCAN Parameter Exploration",
+       fill = "# Clusters") +
+  theme_minimal()
+
+
+## ----validation-metrics-------------------------------------------------------
+# Apply different methods
+km3 <- tidy_kmeans(iris_data, k = 3, nstart = 25)
+pam3 <- tidy_pam(iris_data, k = 3)
+hc3 <- tidy_hclust(iris_data)
+
+# Calculate validation metrics
+km_metrics <- calc_validation_metrics(km3, iris_data)
+pam_metrics <- calc_validation_metrics(pam3, iris_data)
+
+# Compare silhouette widths
+km_metrics$silhouette$avg_width
+pam_metrics$silhouette$avg_width
+
+
+## ----compare-methods----------------------------------------------------------
+# Compare multiple clusterings
+comparison <- compare_clusterings(
+  list(
+    "K-Means" = km3,
+    "PAM" = pam3
+  ),
+  iris_data
+)
+
+comparison
+
+# Visualize comparison
+plot_cluster_comparison(comparison)
+
+
+## ----cluster-sizes------------------------------------------------------------
+# Compare cluster sizes
+plot_cluster_sizes(km3) +
+  labs(title = "K-Means Cluster Sizes")
+
+plot_cluster_sizes(pam3) +
+  labs(title = "PAM Cluster Sizes")
+
+
+## ----workflow-----------------------------------------------------------------
+# 1. Explore your data
+summary(iris_data)
+
+# 2. Standardize if needed
+iris_std <- standardize_data(iris_data)
+
+# 3. Quick clustering analysis
+quick_result <- quick_cluster(iris_std, max_k = 6)
+quick_result$recommendation
+
+# 4. Apply chosen method
+final_clustering <- tidy_kmeans(iris_std, k = 3, nstart = 50)
+
+# 5. Validate
+sil_result <- tidy_silhouette(final_clustering, iris_std)
+plot_silhouette(sil_result)
+
+# 6. Interpret and export
+final_data <- augment_kmeans(final_clustering, iris_data) %>%
+  mutate(species = iris$Species)
+
+# Compare with known labels
+table(Cluster = final_data$cluster, Species = final_data$species)
+
+
+## ----dashboard, eval=FALSE----------------------------------------------------
+# # Create comprehensive clustering dashboard
+# dashboard <- create_cluster_dashboard(final_clustering, iris_std)
+# 
+# # View all plots
+# dashboard
+

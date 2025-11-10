@@ -1,0 +1,499 @@
+---
+title: "Market Basket Analysis"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Market Basket Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+```{r setup}
+library(tidyul)
+library(dplyr)
+library(ggplot2)
+```
+
+## Introduction
+
+Market Basket Analysis (MBA) discovers associations between items that frequently occur together in transactions. This technique is widely used in:
+
+- **Retail**: Understanding shopping patterns
+- **E-commerce**: Product recommendations
+- **Healthcare**: Treatment combinations
+- **Web Analytics**: Page view patterns
+
+This vignette covers:
+
+- Association rule mining with Apriori algorithm
+- Understanding support, confidence, and lift
+- Finding and filtering rules
+- Generating recommendations
+- Practical applications
+
+## Understanding Association Rules
+
+An association rule has the form: **{A, B} => {C}**
+
+This means: "If a customer buys A and B, they're likely to buy C"
+
+### Key Metrics
+
+1. **Support**: How often items appear together
+   - `support({A, B, C}) = transactions with {A,B,C} / total transactions`
+
+2. **Confidence**: Likelihood of consequent given antecedent
+   - `confidence({A,B} => {C}) = support({A,B,C}) / support({A,B})`
+
+3. **Lift**: How much more likely items occur together vs. independently
+   - `lift = confidence / support({C})`
+   - Lift > 1: Positive association
+   - Lift = 1: Independent
+   - Lift < 1: Negative association
+
+## Basic Market Basket Analysis
+
+### Preparing Transaction Data
+
+```{r transaction-data}
+# Create sample grocery transactions
+transactions <- data.frame(
+  transaction_id = c(
+    1, 1, 1, 1,
+    2, 2, 2,
+    3, 3, 3, 3, 3,
+    4, 4,
+    5, 5, 5, 5,
+    6, 6, 6,
+    7, 7, 7, 7,
+    8, 8,
+    9, 9, 9,
+    10, 10, 10, 10
+  ),
+  item = c(
+    "bread", "milk", "eggs", "butter",
+    "bread", "milk", "cheese",
+    "milk", "eggs", "cheese", "yogurt", "butter",
+    "bread", "butter",
+    "milk", "eggs", "butter", "bread",
+    "cheese", "yogurt", "milk",
+    "bread", "milk", "eggs", "cheese",
+    "bread", "butter",
+    "milk", "cheese", "yogurt",
+    "bread", "milk", "eggs", "butter"
+  )
+)
+
+# View sample transactions
+transactions %>%
+  group_by(transaction_id) %>%
+  summarise(items = paste(item, collapse = ", ")) %>%
+  head()
+```
+
+### Mining Association Rules
+
+```{r mine-rules}
+# Convert to arules transactions format
+# Create a transaction list and convert to transactions
+trans_list <- split(transactions$item, transactions$transaction_id)
+trans_obj <- arules::transactions(trans_list)
+
+# Apply Apriori algorithm
+apriori_result <- tidy_apriori(
+  trans_obj,
+  support = 0.2,      # Min 20% of transactions
+  confidence = 0.5,   # Min 50% confidence
+  minlen = 2          # Min 2 items in rule
+)
+
+# View rules in tidy format (already included in result)
+rules <- apriori_result$rules_tbl
+rules %>%
+  arrange(desc(lift)) %>%
+  head(10)
+```
+
+### Understanding the Results
+
+```{r interpret-rules}
+# Get summary statistics
+summary_stats <- summarize_rules(apriori_result)
+summary_stats
+
+# Most interesting rules (high lift)
+rules %>%
+  filter(lift > 1.2) %>%
+  arrange(desc(lift)) %>%
+  select(lhs, rhs, support, confidence, lift)
+```
+
+## Filtering and Exploring Rules
+
+### Filter by Metrics
+
+```{r filter-metrics}
+# High confidence rules - filter the rules_tbl
+high_conf <- apriori_result$rules_tbl %>%
+  filter(confidence >= 0.7)
+high_conf
+
+# High lift rules
+high_lift <- apriori_result$rules_tbl %>%
+  filter(lift >= 1.5)
+high_lift
+
+# Combined filters
+quality_rules <- apriori_result$rules_tbl %>%
+  filter(
+    confidence >= 0.6,
+    lift >= 1.2,
+    support >= 0.2
+  )
+quality_rules
+```
+
+### Filter by Specific Items
+
+```{r filter-items}
+# Rules involving milk
+milk_rules <- filter_rules_by_item(apriori_result, item = "milk")
+milk_rules
+
+# Rules where bread is in the antecedent (LHS)
+bread_lhs <- filter_rules_by_item(apriori_result, item = "bread", where = "lhs")
+bread_lhs
+
+# Rules where eggs is in the consequent (RHS)
+eggs_rhs <- filter_rules_by_item(apriori_result, item = "eggs", where = "rhs")
+eggs_rhs
+```
+
+## Generating Recommendations
+
+### Product Recommendations
+
+```{r recommendations}
+# Customer has bread in basket - what to recommend?
+rec_bread <- recommend_products(apriori_result, basket = c("bread"))
+rec_bread
+
+# Customer has bread and milk - what else?
+rec_both <- recommend_products(
+  apriori_result,
+  basket = c("bread", "milk"),
+  top_n = 3
+)
+rec_both
+```
+
+### Finding Related Items
+
+```{r related-items}
+# What items are associated with cheese?
+cheese_related <- find_related_items(apriori_result, item = "cheese")
+cheese_related
+
+# Visualize top associations (just show the table)
+cheese_related %>%
+  arrange(desc(lift)) %>%
+  head(5) %>%
+  select(lhs, rhs, lift, confidence)
+```
+
+## Visualizing Rules
+
+### Basic Visualization
+
+```{r visualize-rules, fig.width=8, fig.height=6}
+# Scatter plot of rules
+rules %>%
+  ggplot(aes(x = support, y = confidence, color = lift, size = lift)) +
+  geom_point(alpha = 0.6) +
+  scale_color_gradient(low = "blue", high = "red") +
+  labs(title = "Association Rules",
+       subtitle = "Size and color represent lift") +
+  theme_minimal()
+```
+
+### Network Visualization
+
+```{r network-viz, eval=FALSE}
+# Using arulesViz package
+visualize_rules(apriori_result, method = "graph", top_n = 20)
+
+# Interactive plot
+visualize_rules(apriori_result, method = "plotly")
+```
+
+## Practical Example: E-commerce Store
+
+```{r ecommerce-example}
+# Create realistic e-commerce transaction data
+set.seed(123)
+n_transactions <- 200
+
+# Products
+products <- c(
+  "laptop", "mouse", "keyboard", "monitor", "webcam",
+  "headphones", "usb_cable", "hdmi_cable", "laptop_bag",
+  "external_hdd", "sd_card", "mouse_pad"
+)
+
+# Generate transactions (laptops often purchased with accessories)
+transaction_list <- list()
+set.seed(123)
+for (i in 1:n_transactions) {
+  basket_size <- sample(2:5, 1)
+
+  # If laptop is bought, more likely to buy accessories
+  if (runif(1) < 0.3) {
+    items <- c("laptop", sample(c("mouse", "keyboard", "laptop_bag", "hdmi_cable"),
+                                 min(basket_size - 1, 4), replace = FALSE))
+  } else {
+    items <- sample(products, basket_size, replace = FALSE)
+  }
+
+  transaction_list[[i]] <- items
+}
+
+# Convert to data frame
+ecommerce_transactions <- data.frame(
+  transaction_id = rep(1:n_transactions, times = sapply(transaction_list, length)),
+  item = unlist(transaction_list)
+)
+
+# Convert to transactions format
+ecom_list <- split(ecommerce_transactions$item, ecommerce_transactions$transaction_id)
+ecom_trans <- arules::transactions(ecom_list)
+
+# Mine rules
+ecom_rules <- tidy_apriori(
+  ecom_trans,
+  support = 0.05,
+  confidence = 0.3
+)
+
+# View interesting rules
+ecom_rules$rules_tbl %>%
+  filter(lift > 1.5) %>%
+  arrange(desc(confidence)) %>%
+  head(10)
+```
+
+### Cross-Selling Strategy
+
+```{r cross-sell}
+# If customer buys laptop, what accessories to promote?
+laptop_recommendations <- recommend_products(
+  ecom_rules,
+  basket = c("laptop"),
+  top_n = 5
+)
+
+if (nrow(laptop_recommendations) > 0) {
+  laptop_recommendations
+
+  # Expected uplift from recommendations
+  laptop_recommendations %>%
+    mutate(
+      expected_uplift = paste0("+", round((lift - 1) * 100, 1), "%")
+    ) %>%
+    select(rhs, confidence, lift, expected_uplift)
+} else {
+  message("No recommendations found for laptop purchases")
+}
+```
+
+## Tuning Parameters
+
+### Impact of Support
+
+```{r tune-support}
+# Low support = more rules (including rare patterns)
+rules_low_support <- tidy_apriori(
+  trans_obj,
+  support = 0.1,  # Lower threshold
+  confidence = 0.5
+)
+
+# High support = fewer, more common rules
+rules_high_support <- tidy_apriori(
+  trans_obj,
+  support = 0.4,  # Higher threshold
+  confidence = 0.5
+)
+
+# Compare
+data.frame(
+  Threshold = c("Low (0.1)", "High (0.4)"),
+  Rules = c(
+    length(rules_low_support$rules),
+    length(rules_high_support$rules)
+  )
+)
+```
+
+### Impact of Confidence
+
+```{r tune-confidence}
+# Low confidence = more exploratory rules
+rules_low_conf <- tidy_apriori(
+  trans_obj,
+  support = 0.2,
+  confidence = 0.3  # Lower threshold
+)
+
+# High confidence = only strong rules
+rules_high_conf <- tidy_apriori(
+  trans_obj,
+  support = 0.2,
+  confidence = 0.8  # Higher threshold
+)
+
+# Compare
+data.frame(
+  Threshold = c("Low (0.3)", "High (0.8)"),
+  Rules = c(
+    length(rules_low_conf$rules),
+    length(rules_high_conf$rules)
+  )
+)
+```
+
+## Best Practices
+
+### 1. Start Conservative
+
+```{r conservative}
+# Begin with moderate thresholds
+initial_rules <- tidy_apriori(
+  trans_obj,
+  support = 0.2,
+  confidence = 0.5,
+  minlen = 2,
+  maxlen = 4  # Limit rule complexity
+)
+
+# Examine distribution
+initial_rules$rules_tbl %>%
+  summarise(
+    n_rules = n(),
+    avg_support = mean(support),
+    avg_confidence = mean(confidence),
+    avg_lift = mean(lift)
+  )
+```
+
+### 2. Focus on Actionable Rules
+
+```{r actionable}
+# Filter for practically useful rules
+actionable_rules <- initial_rules$rules_tbl %>%
+  filter(
+    lift > 1.2,           # Meaningful association
+    confidence > 0.5,     # Reliable prediction
+    support > 0.15        # Occurs frequently enough
+  )
+
+actionable_rules
+```
+
+### 3. Validate with Business Logic
+
+```{r validate}
+# Check if rules make sense
+questionable <- initial_rules$rules_tbl %>%
+  filter(lift > 3) %>%  # Very high lift might indicate data issue
+  arrange(desc(lift))
+
+questionable
+```
+
+## Real-World Applications
+
+### 1. Store Layout Optimization
+
+Items frequently purchased together should be:
+- Placed far apart (to increase store traversal)
+- Or placed together (to improve convenience)
+
+```{r store-layout}
+# Items that should be separated (to increase browsing)
+high_assoc <- apriori_result$rules_tbl %>%
+  filter(lift > 1.5, confidence > 0.6) %>%
+  select(lhs, rhs, lift, confidence)
+
+high_assoc
+```
+
+### 2. Bundle Creation
+
+```{r bundles}
+# Create product bundles based on rules
+bundles <- ecom_rules$rules_tbl %>%
+  filter(lift > 1.5, support > 0.05) %>%
+  mutate(
+    bundle = paste(lhs, "+", rhs),
+    expected_uptake = paste0(round(confidence * 100, 1), "%")
+  ) %>%
+  select(bundle, expected_uptake, lift) %>%
+  arrange(desc(lift))
+
+head(bundles, 5)
+```
+
+### 3. Personalized Recommendations
+
+```{r personalization}
+# Function to get recommendations for any basket
+get_smart_recommendations <- function(current_basket, rules_obj, n = 3) {
+  recs <- recommend_products(rules_obj, basket = current_basket, top_n = n)
+
+  if (nrow(recs) == 0) {
+    return("No recommendations available")
+  }
+
+  return(recs)
+}
+
+# Example usage
+get_smart_recommendations(c("laptop", "mouse"), ecom_rules, n = 3)
+```
+
+## Summary
+
+**Key Takeaways:**
+
+1. **Support**: How common the pattern is
+2. **Confidence**: How reliable the rule is
+3. **Lift**: How interesting the association is (aim for > 1.2)
+
+**Workflow:**
+
+1. Start with moderate thresholds (support ~0.2, confidence ~0.5)
+2. Examine rule distribution
+3. Filter for actionable rules (high lift, practical confidence)
+4. Validate with domain knowledge
+5. Generate recommendations
+6. Monitor and update regularly
+
+**Function Quick Reference:**
+
+- `tidy_apriori()` - Mine association rules
+- `tidy_rules()` - Convert to tidy format
+- `inspect_rules()` - Filter by metrics
+- `filter_rules_by_item()` - Filter by items
+- `recommend_products()` - Generate recommendations
+- `find_related_items()` - Find associations
+- `visualize_rules()` - Create visualizations
+
+For clustering customers before MBA, see the "Clustering Methods" vignette.

@@ -23,7 +23,7 @@
 #' pca_result <- tidy_pca(USArrests)
 #'
 #' # PCA on selected columns
-#' pca_result <- tidy_pca(mtcars, cols = c(mpg, hp, wt, qsec))
+#' pca_result <- tidy_pca(mtcars, cols = c("mpg", "hp", "wt", "qsec"))
 #'
 #' # Access components
 #' pca_result$scores

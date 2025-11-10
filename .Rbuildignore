@@ -11,3 +11,9 @@
 ^\.gitignore$
 ^cran-comments\.md$
 ^revdep$
+^INSTALL\.md$
+^PACKAGE_SUMMARY\.md$
+^QUICKSTART\.md$
+^build_package\.R$
+^test_package\.R$
+^\.claude$

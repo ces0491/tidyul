@@ -91,9 +91,14 @@ tidy_cutree <- function(hclust_obj, k = NULL, h = NULL) {
     clusters <- stats::cutree(hc_model, h = h)
   }
 
-  # Create tibble
+  # Create tibble with proper .id column
+  cluster_names <- names(clusters)
+  if (is.null(cluster_names)) {
+    cluster_names <- as.character(seq_along(clusters))
+  }
+
   tibble::tibble(
-    .id = names(clusters),
+    .id = cluster_names,
     cluster = as.integer(clusters)
   )
 }

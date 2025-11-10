@@ -11,6 +11,7 @@
 #' @param color_noise_black If TRUE, color noise points (cluster 0) as black (default: TRUE)
 #'
 #' @return A ggplot object
+#' @importFrom rlang :=
 #' @export
 plot_clusters <- function(data, cluster_col = "cluster", x_col = NULL, y_col = NULL,
                           centers = NULL, title = "Cluster Plot", color_noise_black = TRUE) {
