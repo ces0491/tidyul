@@ -12,7 +12,6 @@ tidy_som(
   radius = 1,
   dist_fct = "euclidean",
   toroidal = FALSE,
-  keep = FALSE,
   ...
 )
 }
@@ -33,9 +32,6 @@ Default is c(0.05, 0.01)}
 Default is "euclidean"}
 
 \item{toroidal}{Logical; if TRUE, the grid is toroidal (edges wrap around).
-Default is FALSE}
-
-\item{keep}{Logical; if TRUE, keeps changes and intermediate results.
 Default is FALSE}
 
 \item{...}{Additional arguments passed to kohonen::som()}

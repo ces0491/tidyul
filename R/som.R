@@ -15,8 +15,6 @@
 #'   Default is "euclidean"
 #' @param toroidal Logical; if TRUE, the grid is toroidal (edges wrap around).
 #'   Default is FALSE
-#' @param keep Logical; if TRUE, keeps changes and intermediate results.
-#'   Default is FALSE
 #' @param ... Additional arguments passed to kohonen::som()
 #'
 #' @return A list containing:
@@ -54,7 +52,6 @@ tidy_som <- function(data,
                      radius = 1,
                      dist_fct = "euclidean",
                      toroidal = FALSE,
-                     keep = FALSE,
                      ...) {
 
   # Check if kohonen package is available
@@ -86,6 +83,7 @@ tidy_som <- function(data,
   )
 
   # Train SOM
+  # Note: keep.data must be TRUE to get unit.classif and distances
   som_model <- kohonen::som(
     X = data_matrix,
     grid = som_grid,
@@ -93,7 +91,7 @@ tidy_som <- function(data,
     alpha = alpha,
     radius = radius,
     dist.fcts = dist_fct,
-    keep.data = keep,
+    keep.data = TRUE,  # Changed from 'keep' to always TRUE
     ...
   )
 
@@ -104,17 +102,16 @@ tidy_som <- function(data,
   grid_pts <- som_grid$pts
 
   # Create a lookup table for grid coordinates
-  grid_lookup <- data.frame(
+  grid_lookup <- tibble(
     unit = seq_len(nrow(grid_pts)),
     som_row = grid_pts[, 1],
     som_col = grid_pts[, 2]
   )
 
   # Create mapping tibble
-  mapping <- numeric_data %>%
-    as_tibble() %>%
-    mutate(som_unit = unit_assignments) %>%
-    left_join(grid_lookup, by = c("som_unit" = "unit"))
+  mapping <- tibble::as_tibble(numeric_data) %>%
+    dplyr::mutate(som_unit = unit_assignments) %>%
+    dplyr::left_join(grid_lookup, by = c("som_unit" = "unit"))
 
   # Extract codebook vectors
   codes_matrix <- som_model$codes[[1]]

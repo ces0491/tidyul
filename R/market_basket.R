@@ -395,3 +395,144 @@ print.tidy_apriori <- function(x, ...) {
 
   invisible(x)
 }
+
+
+#' Plot Item Frequency
+#'
+#' Create a bar plot showing the frequency of items in a transaction dataset
+#'
+#' @param transactions A transactions object from arules
+#' @param top_n Number of top items to display (default: 20)
+#' @param type Display type: "absolute" (default) or "relative" (proportion of transactions)
+#' @param title Plot title (default: "Item Frequency Plot")
+#' @param horizontal Logical; if TRUE, creates horizontal bars (default: FALSE)
+#'
+#' @return A ggplot object
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' data("Groceries", package = "arules")
+#'
+#' # Plot top 20 items by absolute frequency
+#' plot_item_frequency(Groceries, top_n = 20, type = "absolute")
+#'
+#' # Plot top 15 items by relative frequency
+#' plot_item_frequency(Groceries, top_n = 15, type = "relative")
+#' }
+plot_item_frequency <- function(transactions, top_n = 20, type = "absolute",
+                                title = "Item Frequency Plot", horizontal = FALSE) {
+
+  # Check if arules is available
+  if (!requireNamespace("arules", quietly = TRUE)) {
+    stop("Package 'arules' is required for this function. ",
+         "Please install it with: install.packages('arules')")
+  }
+
+  # Get item frequencies
+  item_freq <- arules::itemFrequency(transactions, type = type)
+
+  # Sort and get top N
+  item_freq_sorted <- sort(item_freq, decreasing = TRUE)
+  top_items <- head(item_freq_sorted, top_n)
+
+  # Create tibble for plotting
+  freq_tbl <- tibble::tibble(
+    item = names(top_items),
+    frequency = as.numeric(top_items)
+  ) %>%
+    dplyr::mutate(item = forcats::fct_reorder(item, frequency))
+
+  # Y-axis label
+  y_label <- if (type == "relative") "Relative Frequency (Proportion)" else "Absolute Frequency (Count)"
+
+  # Create plot
+  if (horizontal) {
+    p <- ggplot2::ggplot(freq_tbl, ggplot2::aes(x = frequency, y = item)) +
+      ggplot2::geom_col(fill = "steelblue", alpha = 0.8) +
+      ggplot2::labs(
+        title = title,
+        subtitle = sprintf("Top %d items by %s frequency", top_n, type),
+        x = y_label,
+        y = "Item"
+      )
+  } else {
+    p <- ggplot2::ggplot(freq_tbl, ggplot2::aes(x = item, y = frequency)) +
+      ggplot2::geom_col(fill = "steelblue", alpha = 0.8) +
+      ggplot2::labs(
+        title = title,
+        subtitle = sprintf("Top %d items by %s frequency", top_n, type),
+        x = "Item",
+        y = y_label
+      ) +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+  }
+
+  p <- p + ggplot2::theme_minimal()
+
+  p
+}
+
+
+#' Get Item Information Summary
+#'
+#' Extract and summarize information about items in a transactions dataset
+#'
+#' @param transactions A transactions object from arules
+#' @param top_n Number of top items to include in summary (default: 20)
+#'
+#' @return A tibble with item information including labels, counts, and frequencies
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' data("Groceries", package = "arules")
+#' item_summary <- get_item_info(Groceries, top_n = 20)
+#' }
+get_item_info <- function(transactions, top_n = 20) {
+
+  # Check if arules is available
+  if (!requireNamespace("arules", quietly = TRUE)) {
+    stop("Package 'arules' is required for this function. ",
+         "Please install it with: install.packages('arules')")
+  }
+
+  # Get item frequencies
+  item_freq_abs <- arules::itemFrequency(transactions, type = "absolute")
+  item_freq_rel <- arules::itemFrequency(transactions, type = "relative")
+
+  # Get item info if available
+  if (!is.null(arules::itemInfo(transactions))) {
+    item_info <- arules::itemInfo(transactions)
+    has_labels <- "labels" %in% names(item_info)
+    has_level2 <- "level2" %in% names(item_info)
+  } else {
+    has_labels <- FALSE
+    has_level2 <- FALSE
+  }
+
+  # Create summary tibble
+  item_tbl <- tibble::tibble(
+    item = names(item_freq_abs),
+    count = as.numeric(item_freq_abs),
+    frequency = as.numeric(item_freq_rel)
+  )
+
+  # Add additional info if available
+  if (has_labels) {
+    item_tbl <- item_tbl %>%
+      dplyr::mutate(label = item_info$labels)
+  }
+
+  if (has_level2) {
+    item_tbl <- item_tbl %>%
+      dplyr::mutate(category = item_info$level2)
+  }
+
+  # Sort by count and get top N
+  item_tbl <- item_tbl %>%
+    dplyr::arrange(dplyr::desc(count)) %>%
+    dplyr::slice(1:min(top_n, dplyr::n()))
+
+  item_tbl
+}

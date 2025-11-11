@@ -328,6 +328,262 @@ tidy_pca_biplot <- function(pca_obj, pc_x = 1, pc_y = 2, color_by = NULL,
 }
 
 
+#' Plot PCA Scores
+#'
+#' Create a scatter plot of PC scores (observations only, no variable loadings)
+#'
+#' @param pca_obj A tidy_pca object
+#' @param pc_x Principal component for x-axis (default: 1)
+#' @param pc_y Principal component for y-axis (default: 2)
+#' @param color_by Optional column name from scores to color points by
+#' @param shape_by Optional column name from scores to shape points by
+#' @param size Point size (default: 2.5)
+#' @param alpha Point transparency (default: 0.7)
+#' @param label_points Logical; label points with observation IDs? (default: FALSE)
+#' @param title Optional plot title
+#'
+#' @return A ggplot object
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' pca_result <- tidy_pca(iris, scale = TRUE)
+#'
+#' # Basic score plot
+#' plot_pca_scores(pca_result)
+#'
+#' # With custom axes and coloring
+#' plot_pca_scores(pca_result, pc_x = 2, pc_y = 3, color_by = "Species")
+#' }
+plot_pca_scores <- function(pca_obj, pc_x = 1, pc_y = 2,
+                            color_by = NULL, shape_by = NULL,
+                            size = 2.5, alpha = 0.7,
+                            label_points = FALSE, title = NULL) {
+
+  if (!inherits(pca_obj, "tidy_pca")) {
+    stop("pca_obj must be a tidy_pca object")
+  }
+
+  # Get scores
+  scores <- pca_obj$scores
+  pc_x_name <- paste0("PC", pc_x)
+  pc_y_name <- paste0("PC", pc_y)
+
+  if (!pc_x_name %in% names(scores) || !pc_y_name %in% names(scores)) {
+    stop("Requested PCs not available")
+  }
+
+  # Get variance explained
+  var_exp <- pca_obj$variance
+  var_x <- var_exp$prop_variance[pc_x] * 100
+  var_y <- var_exp$prop_variance[pc_y] * 100
+
+  # Build aesthetic mapping
+  aes_mapping <- ggplot2::aes(x = .data[[pc_x_name]], y = .data[[pc_y_name]])
+
+  if (!is.null(color_by) && color_by %in% names(scores)) {
+    aes_mapping$colour <- rlang::sym(color_by)
+  }
+
+  if (!is.null(shape_by) && shape_by %in% names(scores)) {
+    aes_mapping$shape <- rlang::sym(shape_by)
+  }
+
+  # Create plot
+  p <- ggplot2::ggplot(scores, aes_mapping) +
+    ggplot2::geom_point(size = size, alpha = alpha) +
+    ggplot2::labs(
+      title = title %||% "PCA Score Plot",
+      x = sprintf("%s (%.1f%% variance)", pc_x_name, var_x),
+      y = sprintf("%s (%.1f%% variance)", pc_y_name, var_y)
+    ) +
+    ggplot2::theme_minimal()
+
+  # Add point labels if requested
+  if (label_points) {
+    p <- p + ggplot2::geom_text(
+      ggplot2::aes(label = .obs_id),
+      size = 2.5, vjust = -0.8, show.legend = FALSE
+    )
+  }
+
+  p
+}
+
+
+#' Plot PCA Loadings Heatmap
+#'
+#' Create a heatmap showing variable loadings across principal components
+#'
+#' @param pca_obj A tidy_pca object
+#' @param n_components Number of components to display (default: all)
+#' @param cluster_vars Logical; cluster variables by similarity? (default: FALSE)
+#' @param show_values Logical; show loading values in cells? (default: TRUE)
+#' @param title Optional plot title
+#'
+#' @return A ggplot object
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' pca_result <- tidy_pca(USArrests, scale = TRUE)
+#'
+#' # Show all components
+#' plot_pca_loadings(pca_result)
+#'
+#' # Show first 3 components only
+#' plot_pca_loadings(pca_result, n_components = 3)
+#' }
+plot_pca_loadings <- function(pca_obj, n_components = NULL,
+                              cluster_vars = FALSE, show_values = TRUE,
+                              title = NULL) {
+
+  if (!inherits(pca_obj, "tidy_pca")) {
+    stop("pca_obj must be a tidy_pca object")
+  }
+
+  # Get loadings
+  loadings_long <- pca_obj$loadings
+
+  # Filter to n_components if specified
+  if (!is.null(n_components)) {
+    pc_names <- paste0("PC", 1:n_components)
+    loadings_long <- loadings_long %>%
+      dplyr::filter(component %in% pc_names)
+  }
+
+  # Optionally cluster variables
+  if (cluster_vars) {
+    # Convert to wide format for clustering
+    loadings_wide <- loadings_long %>%
+      tidyr::pivot_wider(names_from = component, values_from = loading)
+
+    # Perform hierarchical clustering
+    var_matrix <- as.matrix(loadings_wide %>% dplyr::select(-variable))
+    rownames(var_matrix) <- loadings_wide$variable
+    var_dist <- stats::dist(var_matrix)
+    var_hclust <- stats::hclust(var_dist)
+
+    # Reorder factor levels
+    loadings_long <- loadings_long %>%
+      dplyr::mutate(variable = factor(variable, levels = var_hclust$labels[var_hclust$order]))
+  }
+
+  # Create heatmap
+  p <- ggplot2::ggplot(loadings_long,
+                       ggplot2::aes(x = component, y = variable, fill = loading)) +
+    ggplot2::geom_tile(color = "white", linewidth = 0.5) +
+    ggplot2::scale_fill_gradient2(
+      low = "blue", mid = "white", high = "red",
+      midpoint = 0,
+      limits = c(-1, 1),
+      name = "Loading"
+    ) +
+    ggplot2::labs(
+      title = title %||% "PCA Loadings Heatmap",
+      x = "Principal Component",
+      y = "Variable"
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 0, hjust = 0.5),
+      panel.grid = ggplot2::element_blank()
+    )
+
+  # Add loading values if requested
+  if (show_values) {
+    p <- p + ggplot2::geom_text(
+      ggplot2::aes(label = sprintf("%.2f", loading)),
+      size = 3, color = "black"
+    )
+  }
+
+  p
+}
+
+
+#' Plot Variable Contributions to Principal Components
+#'
+#' Visualize how much each variable contributes to each PC (squared loadings)
+#'
+#' @param pca_obj A tidy_pca object
+#' @param n_components Number of components to display (default: 5)
+#' @param top_n Show only top N variables by contribution (default: NULL for all)
+#' @param title Optional plot title
+#'
+#' @return A ggplot object
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' pca_result <- tidy_pca(USArrests, scale = TRUE)
+#'
+#' # Show all variables for first 3 PCs
+#' plot_pca_contribution(pca_result, n_components = 3)
+#'
+#' # Show top 10 variables only
+#' plot_pca_contribution(pca_result, n_components = 4, top_n = 10)
+#' }
+plot_pca_contribution <- function(pca_obj, n_components = 5,
+                                   top_n = NULL, title = NULL) {
+
+  if (!inherits(pca_obj, "tidy_pca")) {
+    stop("pca_obj must be a tidy_pca object")
+  }
+
+  # Get loadings and calculate contributions (squared loadings)
+  pc_names <- paste0("PC", 1:n_components)
+
+  contributions <- pca_obj$loadings %>%
+    dplyr::filter(component %in% pc_names) %>%
+    dplyr::mutate(
+      contribution = loading^2,
+      component = factor(component, levels = pc_names)
+    )
+
+  # Filter to top N variables if specified
+  if (!is.null(top_n)) {
+    # Get top variables by total contribution across all PCs
+    top_vars <- contributions %>%
+      dplyr::group_by(variable) %>%
+      dplyr::summarize(total_contrib = sum(contribution), .groups = "drop") %>%
+      dplyr::arrange(dplyr::desc(total_contrib)) %>%
+      dplyr::slice(1:top_n) %>%
+      dplyr::pull(variable)
+
+    contributions <- contributions %>%
+      dplyr::filter(variable %in% top_vars)
+  }
+
+  # Reorder variables by total contribution
+  var_order <- contributions %>%
+    dplyr::group_by(variable) %>%
+    dplyr::summarize(total = sum(contribution), .groups = "drop") %>%
+    dplyr::arrange(total) %>%
+    dplyr::pull(variable)
+
+  contributions <- contributions %>%
+    dplyr::mutate(variable = factor(variable, levels = var_order))
+
+  # Create stacked bar plot
+  p <- ggplot2::ggplot(contributions,
+                       ggplot2::aes(x = variable, y = contribution, fill = component)) +
+    ggplot2::geom_col(position = "stack") +
+    ggplot2::scale_fill_brewer(palette = "Set2", name = "Component") +
+    ggplot2::labs(
+      title = title %||% "Variable Contributions to Principal Components",
+      subtitle = "Contribution = Squared Loading",
+      x = "Variable",
+      y = "Contribution"
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)) +
+    ggplot2::coord_flip()
+
+  p
+}
+
+
 #' Print Method for tidy_pca
 #'
 #' @param x A tidy_pca object

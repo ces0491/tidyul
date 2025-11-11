@@ -27,6 +27,7 @@ Imports:
     smacof (>= 2.1.0),
     gridExtra,
     scales,
+    forcats,
     stats,
     utils
 Suggests:

@@ -8,6 +8,12 @@ utils::globalVariables(c(
   "id1", "id2", "distance", "knn_dist", "is_core", "is_noise",
   "x_end", "y_end", ":=", "avg_silhouette", "plot_order",
   "xmin", "xmax", "ymin", "ymax",
+  # market basket analysis variables
+  "count", "frequency", "item",
+  # SOM variables
+  "som_unit", "som_row", "som_col", "unit", "row", "col", "change", "iteration", "value", "quality",
+  # PCA plot variables
+  "contribution", "total_contrib", "total",
   # stats/base functions
   "where", "var", "rnorm", "runif", "setNames", "head"
 ))
