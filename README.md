@@ -1,13 +1,10 @@
-# tidyul: Tidy Unsupervised Learning <img src="man/figures/logo.png" align="right" height="139"/>
-
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/ces0491/tidyul/workflows/R-CMD-check/badge.svg)](https://github.com/ces0491/tidyul/actions)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
 ## Overview
 
-**tidyul** is a comprehensive R package for unsupervised learning that follows tidyverse principles. It provides simplified, consistent interfaces for:
+**tidyul** is an R package for unsupervised learning that follows tidyverse principles. It provides simplified, consistent interfaces for:
 
 - 📊 **Principal Component Analysis (PCA)**
 - 📐 **Multidimensional Scaling (MDS)** - Classical, SMACOF, Sammon, Kruskal
@@ -21,6 +18,7 @@
 - 📈 **Rich Visualizations** - Built on ggplot2
 
 All functions return tidy tibbles and work seamlessly with dplyr, ggplot2, and the tidyverse ecosystem.
+Nothing fancy here, just some syntactic sugar to simplify and standardize unsupervised learning techniques.
 
 ## Installation
 

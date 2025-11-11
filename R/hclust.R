@@ -174,12 +174,18 @@ tidy_dendrogram <- function(hclust_obj, k = NULL, hang = 0.01, cex = 0.7) {
     stop("hclust_obj must be a tidy_hclust or hclust object")
   }
 
+  if(is.null(k)){
+    subt <- ""
+  } else {
+    subt <- paste("Number of Clusters (k) = ", k, sep = "")
+  }
+
   # Plot dendrogram
   plot(hc_model,
        main = paste("Hierarchical Clustering Dendrogram\n(", method_label, " linkage)", sep = ""),
        xlab = "",
        ylab = "Height",
-       sub = "",
+       sub = subt,
        hang = hang,
        cex = cex)
 
